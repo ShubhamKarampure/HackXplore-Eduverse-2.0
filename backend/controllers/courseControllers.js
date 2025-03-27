@@ -208,17 +208,17 @@ export const getCourseDetails = async (req, res) => {
     const { courseId } = req.params;
     const userId = req.userId;      
 
-    // Find course and populate instructor, modules, and nested data
+    // Find course and populate instructor, modules, and nested content
     const course = await CourseModel.findById(courseId)
       .populate('instructor', 'firstName lastName email')
       .populate({
         path: 'modules',
         populate: [
-          { path: 'quiz', select: 'questions passingScore' },
-          { path: 'assignments', select: 'description deadline criteria' }
+          { path: 'contents.quiz', select: 'questions passingScore' },
+          { path: 'contents.assignment', select: 'description deadline criteria' }
         ]
       })
-      .lean(); // Use .lean() for performance
+      .lean(); // Use .lean() for better performance
 
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
@@ -239,6 +239,7 @@ export const getCourseDetails = async (req, res) => {
     });
   }
 };
+
 
 export const findSimilarCoursesController = async (req, res) => {
   try {

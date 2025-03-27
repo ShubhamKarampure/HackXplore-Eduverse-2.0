@@ -5,20 +5,20 @@ const ModuleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   order: { type: Number, required: true },
-  contents: [
-    {
-      type: { type: String, required: true }, // video, text, assignment, quiz
+  contents: {
+    video: {
       title: { type: String, required: true },
-      description: String,
-      resource: {
-        url: String,
-        duration: Number,
-        publicId: String,
-      },
+      url: { type: String, required: true },
+      duration: Number,
+      publicId: String,
     },
-  ],
-  quiz: { type: mongoose.Types.ObjectId, ref: "quizzes" },
-  assignments: [{ type: mongoose.Types.ObjectId, ref: "assignments" }],
+    resource: {
+      title: { type: String, required: true },
+      url: { type: String, required: true },
+    },
+    quiz: { type: mongoose.Types.ObjectId, ref: "quizzes" },
+    assignment: { type: mongoose.Types.ObjectId, ref: "assignments" },
+  }
 });
 
 export const ModuleModel = mongoose.model("modules", ModuleSchema);

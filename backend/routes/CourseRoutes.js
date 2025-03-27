@@ -18,7 +18,7 @@ router.get("/my-courses", authMiddleware, getMyCourses); // Get all enrolled cou
 router.get("/:courseId",authMiddleware, getCourseDetails); // Get course details
 
 // Student Actions
-router.post("/enroll",authMiddleware , enrollCourse); // Enroll in a course
+router.post("/student/enroll",authMiddleware , enrollCourse); // Enroll in a course
 /*
 
 router.delete("/:courseId/unenroll", unenrollStudent); // Unenroll from a course
