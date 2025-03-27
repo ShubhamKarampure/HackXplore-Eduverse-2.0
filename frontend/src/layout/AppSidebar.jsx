@@ -14,9 +14,11 @@ import {
   FaFolderOpen,    // My Courses (for students)
   FaListUl,        // Plugins or other features
   FaChartPie       // Reports/Analytics
+  
 } from "react-icons/fa";
 import { MdOutlineGridView } from "react-icons/md";  // Alternative for dashboard
 import { IoMdSchool } from "react-icons/io"; // Alternative for Courses
+import { HorizontaLDots } from "@/icons";
 
 const studentItems = [
   { icon: <FaThLarge size={22} />, name: "Dashboard", path: "/dashboard" },
@@ -25,7 +27,6 @@ const studentItems = [
   { icon: <FaCalendarAlt size={22} />, name: "Calendar", path: "/calendar" },
   { icon: <FaUserCircle size={22} />, name: "User Profile", path: "/profile" },
 ];
-
 
 const teacherItems = [
   { icon: <MdOutlineGridView size={22}  />, name: "Dashboard", path: "/dashboard" },

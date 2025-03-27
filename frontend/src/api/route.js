@@ -9,9 +9,10 @@ const API_ROUTES = {
         CREATE_PROFILE: `${BACKEND_URL}/create-profile`,
     },
     COURSE: {
-        ALL: `${BACKEND_URL}/student/course/`,
-        ENROLLED: `${BACKEND_URL}/student/course/enrolled`,
-        ENROLL: `${BACKEND_URL}/student/course/enroll`
+        ALL: `${BACKEND_URL}/course/`,
+        MY: `${BACKEND_URL}/course/my-courses`,
+        DETAILS: `${BACKEND_URL}/course/`,
+        ENROLL: `${BACKEND_URL}/course/student/enroll`
     }
 };
 

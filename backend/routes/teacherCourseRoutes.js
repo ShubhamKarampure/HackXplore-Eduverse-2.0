@@ -3,8 +3,7 @@ import {
   createCourse,
   getQuizController,
   generateQuizController,
-  getAllCoursesByInstructor,
-  getCourseById,
+  getAllCourses,
   createRoadmapController,
   uploadContentController,
 } from "../controllers/courseControllers.js";
@@ -12,8 +11,7 @@ import fileUpload from "express-fileupload";
 
 const router = express.Router();
 
-router.route("/").post(createCourse).get(getAllCoursesByInstructor);
-router.route("/get-course/:id/").get(getCourseById);
+router.route("/").post(createCourse).get(getAllCourses);
 router
   .route("/get-course/:id/:idx")
   .get(getQuizController)

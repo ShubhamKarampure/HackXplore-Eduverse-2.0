@@ -25,7 +25,29 @@ export async function getAllCourses() {
 
 export async function getMyCourses() {
   try {   
-    const response = await fetch(API_ROUTES.COURSE.ENROLLED, {  
+    const response = await fetch(API_ROUTES.COURSE.MY, {  
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useUserStore.getState().token}`,
+     
+      }
+    });
+
+    const data = await response.json();
+    console.log(data)
+   if (!response.ok) {
+      throw new Error(data.message || 'Could not fetch courses');
+    }
+    return data;
+  } catch (error) {
+    throw error;
+  } 
+}
+
+export async function getCourseDetails(courseId) {
+  try {   
+    const response = await fetch( `${API_ROUTES.COURSE.DETAILS}/${courseId}`, {  
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

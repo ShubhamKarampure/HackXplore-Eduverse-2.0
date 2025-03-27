@@ -121,14 +121,103 @@ export const enrollCourse = async (req, res) => {
   }
 };
 
+export const getAllCourses = async (req, res) => {   
+  try {     
+    const userId = req.userId;        
+    // Fetch the user's enrolled courses     
+    const user = await UserModel.findById(userId).select("enrolledCourses");      
+    
+    if (!user) {       
+      return res.status(404).json({         
+        success: false,         
+        message: "User not found",       
+      });     
+    }      
+    
+    // Get courses that the user is NOT enrolled in, with specific fields
+    const courses = await CourseModel.find({       
+      _id: { $nin: user.enrolledCourses },     
+    }).populate("instructor",'firstName lastName')  // Only populate instructor name
+    .select("name instructor description semester image"); // Select only specific fields
+      
+    res.status(200).json({       
+      success: true,       
+      message: "Found available courses",       
+      courses,     
+    });   
+  } catch (error) {     
+    console.error(error);     
+    res.status(500).json({       
+      success: false,       
+      message: "Internal server error",     
+    });   
+  } 
+};  
+
+export const getMyCourses = async (req, res) => {   
+  try {     
+    const userId = req.userId;      
+    // Find the user to check their role     
+    const user = await UserModel.findById(userId);      
+    
+    if (!user) {       
+      return res.status(404).json({         
+        success: false,         
+        message: "User not found",       
+      });     
+    }      
+    
+    let courses;      
+    if (user.role === 'Student') {       
+      // For students, fetch the courses they are enrolled in with specific fields
+      courses = await CourseModel.find({         
+        _id: { $in: user.enrolledCourses }       
+      }).populate('instructor','firstName lastName')
+      .select("name instructor description semester image");     
+    } else if (user.role === 'Teacher') {       
+      // For teachers, fetch the courses they are teaching with specific fields
+      courses = await CourseModel.find({         
+        instructor: userId       
+      }).populate('instructor', 'firstName lastName')
+      .select("name instructor description semester image");     
+    } else {       
+      return res.status(403).json({         
+        success: false,         
+        message: "Invalid user role",       
+      });     
+    }      
+    
+    res.status(200).json({       
+      success: true,       
+      message: user.role === 'Student'          
+        ? "Successfully retrieved enrolled courses"          
+        : "Successfully retrieved courses you are teaching",       
+      courses,       
+      role: user.role     
+    });   
+  } catch (error) {     
+    console.error("Error in getMyCourses:", error);     
+    res.status(500).json({       
+      success: false,       
+      message: "Internal server error",     
+    });   
+  } 
+};
 export const getCourseDetails = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const userId = req.user._id;
+    const userId = req.userId;      
 
-    // Find course with populated instructor
+    // Find course and populate instructor, modules, and nested data
     const course = await CourseModel.findById(courseId)
       .populate('instructor', 'firstName lastName email')
+      .populate({
+        path: 'modules',
+        populate: [
+          { path: 'quiz', select: 'questions passingScore' },
+          { path: 'assignments', select: 'description deadline criteria' }
+        ]
+      })
       .lean(); // Use .lean() for performance
 
     if (!course) {
@@ -141,101 +230,12 @@ export const getCourseDetails = async (req, res) => {
     );
     const isInstructor = course.instructor._id.toString() === userId.toString();
 
-    if (!isEnrolled && !isInstructor) {
-      // Mask sensitive details if not enrolled
-      delete course.modules;
-      delete course.assignments;
-    }
-
     res.status(200).json(course);
   } catch (error) {
     console.error('Get course details error:', error);
     res.status(500).json({ 
       message: 'Error retrieving course details', 
       error: error.message 
-    });
-  }
-};
-
-export const getAllCourses = async (req, res) => {
-  try {
-    const userId  = req.userId;  
-
-    // Fetch the user's enrolled courses
-    const user = await UserModel.findById(userId).select("enrolledCourses");
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Get courses that the user is NOT enrolled in
-    const courses = await CourseModel.find({
-      _id: { $nin: user.enrolledCourses },
-    }).populate("instructor");
-
-    res.status(200).json({
-      success: true,
-      message: "Found available courses",
-      courses,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-export const getMyCourses = async (req, res) => {
-  try {
-    const userId = req.userId;
-
-    // Find the user to check their role
-    const user = await UserModel.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    let courses;
-
-    if (user.role === 'Student') {
-      // For students, fetch the courses they are enrolled in
-      courses = await CourseModel.find({
-        _id: { $in: user.enrolledCourses }
-      }).populate('instructor', 'firstName lastName email');
-    } else if (user.role === 'Teacher') {
-      // For teachers, fetch the courses they are teaching
-      courses = await CourseModel.find({
-        instructor: userId
-      }).populate('students', 'firstName lastName email');
-    } else {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid user role",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: user.role === 'Student' 
-        ? "Successfully retrieved enrolled courses" 
-        : "Successfully retrieved courses you are teaching",
-      courses,
-      role: user.role
-    });
-  } catch (error) {
-    console.error("Error in getMyCourses:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
     });
   }
 };
@@ -284,127 +284,6 @@ export const findSimilarCoursesController = async (req, res) => {
       success: false,
       message: "Internal server error",
       details: error.message
-    });
-  }
-};
-
-
-export const getAllCoursesByInstructor = async (req, res) => {
-  try {
-    const { instructorid } = req.headers;
-    const courses = await CourseModel.find({ instructor: instructorid });
-    res.status(200).json({
-      success: true,
-      message: "Found all courses",
-      courses,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-export const enrollStudentController = async (req, res) => {
-  try {
-    const student = req.params.id;
-    const { courseId } = req.body;
-    const Course = await CourseModel.findById(courseId);
-
-    if (!Course) {
-      return res.status(401).json({
-        success: false,
-        message: "Course not found",
-      });
-    }
-
-    if (Course.students.find((currstudent) => currstudent == student))
-      return res.status(401).json({
-        success: false,
-        message: "Student already enrolled",
-      });
-    const Student = await UserModel.findById(student);
-
-    if (!Student) {
-      return res.status(400).json({
-        success: false,
-        message: "Student not found",
-      });
-    }
-
-    if (!Course)
-      return res.status(400).json({
-        success: false,
-        message: "Course not found",
-      });
-
-    await ProgressModel.create({ student: student, course: courseId });
-    Course.students.push(student);
-    Student.enrolledCourses.push(courseId);
-    await Course.save();
-    await Student.save();
-    res.status(201).json({
-      success: true,
-      message: "Student enrolled",
-      Course,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-export const unenrollStudentController = async (req, res) => {
-  try {
-    const studentId = req.params.id;
-    const { courseId } = req.body;
-
-    // Find the course and student
-    const Course = await CourseModel.findById(courseId);
-    const Student = await UserModel.findById(studentId);
-
-    if (!Course) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found",
-      });
-    }
-
-    if (!Student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
-    }
-
-    // Remove the student from the course's student list
-    Course.students = Course.students.filter(
-      (student) => student.toString() !== studentId
-    );
-
-    Student.enrolledCourses = Student.enrolledCourses.filter(
-      (course) => course.toString() !== courseId
-    );
-
-    // Save the changes
-    await Course.save();
-    await Student.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Student unenrolled successfully",
-      Course,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
     });
   }
 };
@@ -484,29 +363,6 @@ export const getQuizController = async (req, res) => {
   }
 };
 
-export const getCourseById = async (req, res) => {
-  try {
-    const courseId = req.params.id;
-    const course = await CourseModel.findById(courseId);
-    if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found",
-      });
-    }
-    res.status(200).json({
-      success: true,
-      message: "Course found",
-      course,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
 export const getLeaderboard = async (req, res) => {
   try {
     const courseId = req.params.id;

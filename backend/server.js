@@ -6,8 +6,8 @@ import 'colors'
 import { dbConnect } from './database/dbConnect.js'
 import { userRouter } from './routes/userRoutes.js'
 import { adminRouter } from './routes/adminRoutes.js'
+import { CourseRouter } from './routes/CourseRoutes.js'
 import { teacherCourseRouter } from './routes/teacherCourseRoutes.js'
-import { studentCourseRouter } from './routes/studentCourseRoutes.js'
 import { teacherAssignmentRouter } from './routes/teacherAssignmentRoutes.js'
 import { studentAssignmentRouter } from './routes/studentAssignmentRoutes.js'
 import { studentQuizRouter } from './routes/studentQuizRoutes.js'
@@ -28,10 +28,11 @@ app.use(cors({
 }));
 
 app.use('/api/v1/user', userRouter)
-app.use('/api/v1/user/chat', messageRotuer)
+app.use('/api/v1/user/course', CourseRouter)
+
 app.use('/api/v1/admin', adminRouter)
+app.use('/api/v1/user/chat', messageRotuer)
 app.use('/api/v1/user/teacher/course', teacherCourseRouter)
-app.use('/api/v1/user/student/course', studentCourseRouter)
 app.use('/api/v1/user/teacher/assignment', teacherAssignmentRouter)
 app.use('/api/v1/user/student/assignment', studentAssignmentRouter)
 app.use('/api/v1/user/student/quiz', studentQuizRouter)
