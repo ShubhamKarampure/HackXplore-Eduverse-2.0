@@ -2,11 +2,11 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; // Use Next.js router
+import { useRouter } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { HorizontaLDots } from "@/icons";
 
-const CourseSidebar = ({ course, selectedModule, setSelectedModule }) => {
+const CourseSidebar = ({ course, selectedModule, setSelectedModule, setIsDashboardOpen }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const router = useRouter();
 
@@ -36,19 +36,31 @@ const CourseSidebar = ({ course, selectedModule, setSelectedModule }) => {
         </Link>
       </div>
 
-      {/* Course Dashboard Button */}
+      {/* Course Dashboard Button - Styled Consistently */}
       <button
-        onClick={() => router.push(`/course/${course.id}`)}
-        className="mb-4 px-4 py-3 w-full bg-primary text-white rounded-lg text-left font-semibold hover:bg-primary/80 transition"
+        onClick={() => {
+          setIsDashboardOpen(true);
+          setSelectedModule(null); // Ensure no module is selected
+        }}
+        className={`menu-item group cursor-pointer mb-4 
+          ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"} 
+          ${selectedModule === null ? "menu-item-active" : "menu-item-inactive hover:bg-primary/10"}`}
       >
-        📌 Course Dashboard
+        <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full 
+          ${selectedModule === null 
+            ? "bg-primary/20 text-primary" 
+            : "bg-gray-200 dark:bg-gray-700 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary"}`}>
+          📌
+        </span>
+        {(isExpanded || isMobileOpen || isHovered) && <span className="menu-item-text">Course Dashboard</span>}
       </button>
 
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className={`mb-4 text-xs uppercase text-gray-400 flex leading-[20px] ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
+              <h2 className={`mb-4 text-xs uppercase text-gray-400 flex leading-[20px] 
+                ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
                 {isExpanded || isHovered || isMobileOpen ? "Modules" : <HorizontaLDots />}
               </h2>
 
@@ -56,11 +68,18 @@ const CourseSidebar = ({ course, selectedModule, setSelectedModule }) => {
                 {course.modules.map((module, moduleIndex) => (
                   <li key={module._id || `module-${moduleIndex}`}>
                     <button
-                      onClick={() => setSelectedModule(module)}
-                      className={`menu-item group ${selectedModule?.order === module.order ? "menu-item-active" : "menu-item-inactive hover:bg-primary/10"} cursor-pointer ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
+                      onClick={() => {
+                        setSelectedModule(module);
+                        setIsDashboardOpen(false);
+                      }}
+                      className={`menu-item group cursor-pointer ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"} 
+                        ${selectedModule?._id === module._id ? "menu-item-active" : "menu-item-inactive hover:bg-primary/10"}`}
                     >
-                      <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full ${selectedModule?.order === module.order ? "bg-primary/20 text-primary" : "bg-gray-200 dark:bg-gray-700 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary"}`}>
-                        <span className="text-xs font-semibold">{moduleIndex + 1}</span>
+                      <span className={`w-6 h-6 mr-3 flex items-center justify-center rounded-full 
+                        ${selectedModule?._id === module._id 
+                          ? "bg-primary/20 text-primary" 
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary"}`}>
+                        {moduleIndex + 1}
                       </span>
                       {(isExpanded || isMobileOpen || isHovered) && <span className="menu-item-text">{module.title}</span>}
                     </button>

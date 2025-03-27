@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import Button from '../ui/button/Button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const ModuleContent = ({ selectedModule }) => {
@@ -28,7 +27,6 @@ const ModuleContent = ({ selectedModule }) => {
   const renderVideo = () => {
     if (!contents.video) return null;
 
-    // Check if it's a YouTube URL
     const isYouTubeUrl = contents.video.url.includes('youtube.com') || contents.video.url.includes('youtu.be');
 
     return (
@@ -46,7 +44,7 @@ const ModuleContent = ({ selectedModule }) => {
                 contents.video.url
                   .replace('watch?v=', 'embed/')
                   .replace('youtu.be/', 'youtube.com/embed/')
-                  .split('&')[0] // Remove additional parameters
+                  .split('&')[0]
               }
               title={contents.video.title}
               frameBorder="0"
@@ -81,13 +79,11 @@ const ModuleContent = ({ selectedModule }) => {
   };
 
   const handleQuizSubmit = () => {
-    // Implement quiz submission logic
     console.log('Selected Answers:', selectedQuizAnswers);
-    // You might want to add validation, scoring, etc.
   };
 
   return (
-    <div className="flex-grow p-6 max-w-4xl mx-auto">
+    <div className="flex-grow p-6 max-w-4xl mx-auto space-y-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           {selectedModule.title}
@@ -100,147 +96,123 @@ const ModuleContent = ({ selectedModule }) => {
       {/* Video Section */}
       {renderVideo()}
 
-      {/* Tabs for Resources, Assignment, and Quiz */}
-      <Tabs defaultValue="resources" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="resources" className="flex items-center">
-            <FileDown className="w-4 h-4 mr-2" />
-            Resources
-          </TabsTrigger>
-          <TabsTrigger value="assignment" className="flex items-center">
-            <ClipboardList className="w-4 h-4 mr-2" />
-            Assignment
-          </TabsTrigger>
-          <TabsTrigger value="quiz" className="flex items-center">
-            <FileText className="w-4 h-4 mr-2" />
-            Quiz
-          </TabsTrigger>
-        </TabsList>
+      {/* Resources Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileDown className="w-6 h-6 mr-3 text-green-500" />
+            Course Resources
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {contents.resource ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="font-medium">{contents.resource.title}</span>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open(contents.resource.url, '_blank')}
+                >
+                  Download
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-500">No resources available for this module.</p>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Resources Tab */}
-        <TabsContent value="resources">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileDown className="w-6 h-6 mr-3 text-green-500" />
-                Course Resources
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contents.resource ? (
+      {/* Assignment Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <ClipboardList className="w-6 h-6 mr-3 text-orange-500" />
+            Module Assignment
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {contents.assignment ? (
+            <div className="space-y-4">
+              <p className="text-gray-700 dark:text-gray-300">
+                {contents.assignment.description}
+              </p>
+              <div>
+                <h4 className="font-semibold mb-2">Submission Criteria:</h4>
+                <ul className="list-disc pl-5 text-gray-600 dark:text-gray-400">
+                  {contents.assignment.criteria.map((criterion, index) => (
+                    <li key={index}>{criterion}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="text-gray-600">
+                  Deadline: {new Date(contents.assignment.deadline).toLocaleDateString()}
+                </span>
+                <Button>Submit Assignment</Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-500">No assignment available for this module.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quiz Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="w-6 h-6 mr-3 text-purple-500" />
+            Module Quiz
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {contents.quiz ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full">
+                  Start Quiz
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{selectedModule.title} Quiz</DialogTitle>
+                </DialogHeader>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <span className="font-medium">{contents.resource.title}</span>
-                    <Button 
-                      variant="outline"
-                      onClick={() => window.open(contents.resource.url, '_blank')}
-                    >
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500">No resources available for this module.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Assignment Tab */}
-        <TabsContent value="assignment">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <ClipboardList className="w-6 h-6 mr-3 text-orange-500" />
-                Module Assignment
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contents.assignment ? (
-                <div className="space-y-4">
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {contents.assignment.description}
-                  </p>
-                  <div>
-                    <h4 className="font-semibold mb-2">Submission Criteria:</h4>
-                    <ul className="list-disc pl-5 text-gray-600 dark:text-gray-400">
-                      {contents.assignment.criteria.map((criterion, index) => (
-                        <li key={index}>{criterion}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <span className="text-gray-600">
-                      Deadline: {new Date(contents.assignment.deadline).toLocaleDateString()}
-                    </span>
-                    <Button>Submit Assignment</Button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500">No assignment available for this module.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Quiz Tab */}
-        <TabsContent value="quiz">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="w-6 h-6 mr-3 text-purple-500" />
-                Module Quiz
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contents.quiz ? (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">
-                      Start Quiz
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>{selectedModule.title} Quiz</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {contents.quiz.questions.map((question, index) => (
-                        <div key={index} className="border-b pb-4">
-                          <p className="font-medium mb-2">{question.question}</p>
-                          <div className="space-y-2">
-                            {Object.entries(question.options).map(([key, value]) => (
-                              <div key={key} className="flex items-center">
-                                <input 
-                                  type="radio" 
-                                  name={`question-${index}`} 
-                                  id={`${index}-${key}`} 
-                                  className="mr-2" 
-                                  checked={selectedQuizAnswers[index] === key}
-                                  onChange={() => handleQuizAnswerChange(index, key)}
-                                />
-                                <label htmlFor={`${index}-${key}`}>{value}</label>
-                              </div>
-                            ))}
+                  {contents.quiz.questions.map((question, index) => (
+                    <div key={index} className="border-b pb-4">
+                      <p className="font-medium mb-2">{question.question}</p>
+                      <div className="space-y-2">
+                        {Object.entries(question.options).map(([key, value]) => (
+                          <div key={key} className="flex items-center">
+                            <input 
+                              type="radio" 
+                              name={`question-${index}`} 
+                              id={`${index}-${key}`} 
+                              className="mr-2" 
+                              checked={selectedQuizAnswers[index] === key}
+                              onChange={() => handleQuizAnswerChange(index, key)}
+                            />
+                            <label htmlFor={`${index}-${key}`}>{value}</label>
                           </div>
-                        </div>
-                      ))}
-                      <Button 
-                        className="w-full mt-4"
-                        onClick={handleQuizSubmit}
-                      >
-                        Submit Quiz
-                      </Button>
+                        ))}
+                      </div>
                     </div>
-                  </DialogContent>
-                </Dialog>
-              ) : (
-                <p className="text-gray-500">No quiz available for this module.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  ))}
+                  <Button 
+                    className="w-full mt-4"
+                    onClick={handleQuizSubmit}
+                  >
+                    Submit Quiz
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <p className="text-gray-500">No quiz available for this module.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

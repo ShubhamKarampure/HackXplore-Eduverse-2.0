@@ -9,6 +9,7 @@ import Backdrop from "@/layout/Backdrop";
 import AppHeader from "@/layout/AppHeader";
 import CourseSidebar from "@/components/courses/CourseSidebar";
 import { useSidebar } from "@/context/SidebarContext";
+import CourseDashboard from "@/components/courses/CourseDashboard";
 
 const CourseDetailPage = () => {
   const { courseId } = useParams();
@@ -18,6 +19,7 @@ const CourseDetailPage = () => {
   const [course, setCourse] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
   const [selectedContent, setSelectedContent] = useState(null);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(true); 
 
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   
@@ -36,10 +38,7 @@ const CourseDetailPage = () => {
         console.log(data);
         setCourse(data);
 
-        // Automatically select first module if exists
-        if (data.modules.length > 0) {
-          setSelectedModule(data.modules[0]);
-        }
+        
       } catch (err) {
         showAlert(err?.message || "Failed to fetch course details", alertTypes.ERROR);
       }
@@ -55,7 +54,7 @@ const CourseDetailPage = () => {
       
     
       {/* Sidebar Component */}
-      <CourseSidebar course={course} selectedModule={selectedModule} setSelectedModule={setSelectedModule} />
+      <CourseSidebar course={course} selectedModule={selectedModule} setSelectedModule={setSelectedModule} setIsDashboardOpen={setIsDashboardOpen}/>
         <Backdrop />
         
         <div
@@ -65,7 +64,8 @@ const CourseDetailPage = () => {
          <AppHeader />
         {/* Module Content Component */}'
         <div className="min-h-screen">
-      <ModuleContent selectedModule={selectedModule} selectedContent={selectedContent} setSelectedContent={setSelectedContent} />
+          {isDashboardOpen && <CourseDashboard course={course} ></CourseDashboard>}
+          {!isDashboardOpen && <ModuleContent selectedModule={selectedModule} selectedContent={selectedContent} setSelectedContent={setSelectedContent} />}
         </div>'
     </div>
        
