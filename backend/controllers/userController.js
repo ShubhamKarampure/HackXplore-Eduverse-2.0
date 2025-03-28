@@ -5,8 +5,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { CourseModel } from "../models/courseModel.js";
 import { TestModel } from "../models/testModel.js";
-import { ModuleModel } from "../models/moduleModel.js";
-import { QuizModel } from "../models/quizModel.js";
 import { OAuth2Client } from 'google-auth-library';
 
 const JWT_SECRET = process.env.JWT_SECRET;

@@ -1,5 +1,6 @@
 import { CourseModel } from "../models/courseModel.js";
 import { UserModel } from "../models/userModel.js";
+import { QuizModel } from "../models/quizModel.js";
 import { uploadOnCloud ,deleteFromCloud } from "../utils/cloudinary.js";
 import axios from "axios";
 
@@ -243,7 +244,7 @@ export const getMyCourses = async (req, res) => {
     const userId = req.userId;      
     // Find the user to check their role     
     const user = await UserModel.findById(userId);      
-    console.log(user)
+   
     if (!user) {       
       return res.status(404).json({         
         success: false,         
@@ -299,8 +300,8 @@ export const getCourseDetails = async (req, res) => {
       .populate({
         path: 'modules',
         populate: [
-          { path: 'contents.quiz', select: 'questions passingScore' },
-          { path: 'contents.assignment', select: 'description deadline criteria' }
+          { path: 'contents.quiz', model: 'quizzes', select: 'questions passingScore' },
+          { path: 'contents.assignment', model: 'assignments', select: 'description deadline criteria' }
         ]
       })
       .lean(); // Use .lean() for better performance
