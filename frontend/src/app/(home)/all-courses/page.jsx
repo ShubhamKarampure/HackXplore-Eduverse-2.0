@@ -150,60 +150,61 @@ const CoursesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course) => (
                 <Card
-                  key={course._id}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl 
-                             transition-all duration-300 transform hover:-translate-y-2 
-                             border-2 border-transparent hover:border-primary/20 
-                             overflow-hidden flex flex-col"
-                  onClick={() => handleCourseSelect(course)}
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <img 
-                      src={course.image?.url || "/placeholder.svg"} 
-                      alt={course.name || "Course Image"} 
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-110" 
-                    />
-                  </div>
-                  <CardContent className="flex-grow p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <CardTitle className="text-xl font-bold text-gray-900 dark:text-white line-clamp-2">
-                        {truncateText(course.name, 50)}
-                      </CardTitle>
-                      <Badge 
-                        variant="outline" 
-                        className="ml-2 bg-primary/10 text-primary border-primary/30"
-                      >
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Sem {course.semester || 'N/A'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center mb-4">
-                      <UserCircle2 className="w-6 h-6 mr-2 text-gray-500 dark:text-gray-400" />
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">
-                        {course.instructor?.firstName || ''} {course.instructor?.lastName || ''}
-                      </span>
-                    </div>
-                    
-                    <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
-                      {truncateText(course.description, 100)}
-                    </p>
-                    
-                    <div className="mt-auto pt-4 border-t dark:border-gray-700">
-                      <Button
-                        variant="outline"
-                        className="w-full bg-primary/10 text-primary hover:bg-primary/20 
-                                   border-primary/30 transition-colors duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleCourseSelect(course)
-                        }}
-                      >
-                        Enroll Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+  className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg 
+             transition-all duration-300 transform hover:-translate-y-2 
+             border border-gray-300 dark:border-gray-700 
+             overflow-hidden flex flex-col h-full"
+  onClick={() => handleCourseSelect(course)}
+>
+  <div className="relative h-48 overflow-hidden">
+    <img 
+      src={course.image?.url || "/placeholder.svg"} 
+      alt={course.name || "Course Image"} 
+      className="w-full h-full object-cover transition-transform duration-300 hover:scale-110" 
+    />
+  </div>
+  <CardContent className="flex-grow p-6 flex flex-col">
+    <div className="flex justify-between items-start mb-4">
+      <CardTitle className="text-xl font-bold text-gray-900 dark:text-white line-clamp-2">
+        {truncateText(course.name, 50)}
+      </CardTitle>
+      <Badge 
+        variant="outline" 
+        className="ml-2 bg-primary/10 text-primary border-primary/30"
+      >
+        <Calendar className="w-4 h-4 mr-1" />
+        Sem {course.semester || 'N/A'}
+      </Badge>
+    </div>
+
+    <div className="flex items-center mb-4">
+      <UserCircle2 className="w-6 h-6 mr-2 text-gray-500 dark:text-gray-400" />
+      <span className="text-gray-700 dark:text-gray-300 font-medium">
+        {course.instructor?.firstName || ''} {course.instructor?.lastName || ''}
+      </span>
+    </div>
+
+    <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
+      {truncateText(course.description, 100)}
+    </p>
+
+    {/* Ensuring consistent button placement */}
+    <div className="mt-auto pt-4 border-t dark:border-gray-700">
+      <Button
+        variant="outline"
+        className="w-full bg-primary/10 text-primary hover:bg-primary/20 
+                   border-primary/30 transition-colors duration-300"
+        onClick={(e) => {
+          e.stopPropagation()
+          handleCourseSelect(course)
+        }}
+      >
+        Enroll Now
+      </Button>
+    </div>
+  </CardContent>
+</Card>
+
               ))}
             </div>
           ) : (

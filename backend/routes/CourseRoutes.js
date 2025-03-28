@@ -5,10 +5,6 @@ import {
   enrollCourse,
   getMyCourses,
   getCourseDetails
-  /*
-  getEnrolledCourses,
-  unenrollStudent,
-  findSimilarCourses,*/
 } from "../controllers/courseControllers.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -24,13 +20,4 @@ router.post("/student/enroll",authMiddleware , enrollCourse); // Enroll in a cou
 // Teacher Action
 router.post("/", authMiddleware, createCourse);
 
-/*
-
-
-router.delete("/:courseId/unenroll", unenrollStudent); // Unenroll from a course
-
-// Additional Features
-router.get("/:courseId/similar", findSimilarCourses); // Find similar courses
-router.post("/quiz/:courseId", submitQuiz); // Submit quiz
-*/
 export const CourseRouter = router;

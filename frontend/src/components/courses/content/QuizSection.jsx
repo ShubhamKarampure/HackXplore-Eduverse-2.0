@@ -11,18 +11,19 @@ import { useRouter } from 'next/navigation';
 const QuizSection = ({ 
   quizData, 
   moduleId,
-  quizId,
+  courseId,
+  isTeacher,
 }) => {
   const router = useRouter();
 
   const handleViewQuiz = () => {
     // Redirect to quiz view page
-    router.push(`/quiz/${moduleId}/view`);
+    router.push(`/quiz/view/${moduleId}?courseId=${courseId}`);
   };
 
   const handleEditQuiz = () => {
     // Redirect to quiz edit page
-    router.push(`/quiz/${moduleId}/edit`);
+    router.push(`/quiz/edit/${moduleId}?courseId=${courseId}`);
   };
 
   return (
@@ -34,25 +35,42 @@ const QuizSection = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        {!isTeacher ?
+          ( quizData?.questions?.length > 0 ? (
+            <Button
+              variant="primary"
+              className="w-full"
+              onClick={handleViewQuiz}
+            >
+              <Edit className="mr-2 w-4 h-4" /> View Quiz
+            </Button>
+          ) : (
+            <p className="text-gray-500">No quiz available for this module.</p>
+             
+          )) :
+          (
+            <div className="space-y-4">
           {quizData?.questions?.length > 0 ? (
             <Button 
-              variant="secondary" 
+              variant="primary" 
               className="w-full" 
               onClick={handleEditQuiz}
             >
-              <Edit className="mr-2 w-4 h-4" /> Edit Quiz
+               <Edit className="mr-2 w-4 h-4" /> Edit Quiz
             </Button>
           ) : (
             <Button 
               variant="primary" 
               className="w-full" 
-              onClick={handleViewQuiz}
+              onClick={handleEditQuiz}
             >
-              <Plus className="mr-2 w-4 h-4" /> Generate Quiz
+              <Plus className="mr-2 w-4 h-4" /> Create Quiz
             </Button>
           )}
         </div>
+          )
+        }
+        
       </CardContent>
     </Card>
   );

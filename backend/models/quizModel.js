@@ -1,22 +1,27 @@
 import mongoose from "mongoose";
 
-const QuizSchema = new mongoose.Schema({
-  module: { type: mongoose.Types.ObjectId, ref: "modules", required: true },
-  questions: [
-    {
-      question: { type: String, required: true },
-      options: {
-        a: { type: String, required: true },
-        b: { type: String, required: true },
-        c: { type: String },
-        d: { type: String },
+const QuizSchema = new mongoose.Schema(
+  {
+    module: { type: mongoose.Types.ObjectId, ref: "modules"},
+    questions: [
+      {
+        question: { type: String},
+        options: {
+          a: { type: String },
+          b: { type: String },
+          c: { type: String },
+          d: { type: String },
+        },
+        answer: { 
+          type: [String], 
+        }, 
+        difficulty: { type: Number, enum: [1, 2, 3], default: 1 }, // 1 = Easy, 2 = Medium, 3 = Hard
       },
-      answer: { type: String, required: true },
-      conceptTags: { type: [String], default: [] },
-      difficulty: { type: Number, default: 1 },
-    },
-  ],
-  passingScore: { type: Number, default: 70 },
-});
+    ],
+    duration: { type: Number}, // Duration in minutes
+    totalMarks: { type: Number}, // Total possible marks
+  },
+  { timestamps: true } // Adds createdAt and updatedAt fields
+);
 
 export const QuizModel = mongoose.model("quizzes", QuizSchema);

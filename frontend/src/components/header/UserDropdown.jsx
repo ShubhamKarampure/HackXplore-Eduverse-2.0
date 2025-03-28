@@ -24,8 +24,8 @@ export default function UserDropdown() {
 
   function handleLogout() {
     router.push("/signin");
-    logout();
     closeDropdown();
+    logout();
   }
 
   return (

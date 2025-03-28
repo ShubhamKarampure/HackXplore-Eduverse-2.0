@@ -5,14 +5,10 @@ import cookieParser from 'cookie-parser'
 import 'colors'
 import { dbConnect } from './database/dbConnect.js'
 import { userRouter } from './routes/userRoutes.js'
-import { adminRouter } from './routes/adminRoutes.js'
-import { CourseRouter } from './routes/CourseRoutes.js'
+import { CourseRouter } from './routes/courseRoutes.js'
 import { ModuleRouter } from './routes/moduleRoutes.js'
+import { quizRouter } from './routes/quizRoutes.js'
 
-import { teacherAssignmentRouter } from './routes/teacherAssignmentRoutes.js'
-import { studentAssignmentRouter } from './routes/studentAssignmentRoutes.js'
-import { studentQuizRouter } from './routes/studentQuizRoutes.js'
-import messageRotuer from './routes/messagesRoutes.js'
 import fileUpload from 'express-fileupload'
 
 dotenv.config();
@@ -37,11 +33,7 @@ app.use(cors({
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/user/course', CourseRouter)
 app.use('/api/v1/user/modules', ModuleRouter)
-app.use('/api/v1/admin', adminRouter)
-app.use('/api/v1/user/chat', messageRotuer)
-app.use('/api/v1/user/teacher/assignment', teacherAssignmentRouter)
-app.use('/api/v1/user/student/assignment', studentAssignmentRouter)
-app.use('/api/v1/user/student/quiz', studentQuizRouter)
+app.use('/api/v1/user/quiz', quizRouter)
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`.bgBlue.bold);

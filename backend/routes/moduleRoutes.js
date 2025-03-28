@@ -1,13 +1,13 @@
 import express from "express";
-import { createModule, getModuleById, updateModule, deleteModule, generateModules } from "../controllers/moduleController.js";
+import { createModule,  updateModule, deleteModule, generateModules } from "../controllers/moduleController.js";
 
 const router = express.Router();
 
+// Teacher Actions
 router.post("/", createModule);
 router.get("/generate/:id", generateModules);
 
-router.get("/:id", getModuleById);
-router.put("/:id", updateModule);
+router.put("/:moduleId", updateModule);
 router.delete("/:id", deleteModule);
 
 export const ModuleRouter = router;
