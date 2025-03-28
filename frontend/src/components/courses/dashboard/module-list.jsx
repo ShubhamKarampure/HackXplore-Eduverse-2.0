@@ -1,113 +1,51 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown, ChevronUp, CheckCircle, Clock } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronUp, CheckCircle, Clock } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
-const moduleData = [
-  {
-    _id: "67e61fd06a08337244d17a99",
-    title: "Introduction to Artificial Intelligence",
-    description: "Understanding the basics of AI, its history, and its applications.",
-    order: 1,
-    progress: 100,
-    status: "completed",
-  },
-  {
-    _id: "67e61fd06a08337244d17a9a",
-    title: "Mathematics for Machine Learning",
-    description: "Reviewing the mathematical concepts required for ML, including linear algebra and calculus.",
-    order: 2,
-    progress: 85,
-    status: "in-progress",
-  },
-  {
-    _id: "67e61fd06a08337244d17a9b",
-    title: "Supervised Learning",
-    description: "Learning the fundamentals of supervised learning, including regression and classification.",
-    order: 3,
-    progress: 60,
-    status: "in-progress",
-  },
-  {
-    _id: "67e61fd06a08337244d17a9c",
-    title: "Unsupervised Learning",
-    description: "Understanding unsupervised learning techniques, including clustering and dimensionality reduction.",
-    order: 4,
-    progress: 30,
-    status: "in-progress",
-  },
-  {
-    _id: "67e61fd06a08337244d17a9d",
-    title: "Deep Learning Fundamentals",
-    description: "Learning the basics of deep learning, including neural networks and backpropagation algorithm.",
-    order: 5,
-    progress: 10,
-    status: "in-progress",
-  },
-  {
-    _id: "67e61fd06a08337244d17a9e",
-    title: "Convolutional Neural Networks",
-    description: "Understanding the application of CNNs in image and signal processing.",
-    order: 6,
-    progress: 0,
-    status: "upcoming",
-  },
-  {
-    _id: "67e61fd06a08337244d17a9f",
-    title: "Recurrent Neural Networks",
-    description: "Learning the application of RNNs in sequence processing and time series analysis.",
-    order: 7,
-    progress: 0,
-    status: "upcoming",
-  },
-  {
-    _id: "67e61fd06a08337244d17aa0",
-    title: "Project Development and Deployment",
-    description: "Applying AI and ML concepts to real-world projects and deploying them using popular frameworks.",
-    order: 8,
-    progress: 0,
-    status: "upcoming",
-  },
-]
+export default function ModuleList({ courseData }) {
+  const moduleData = courseData?.modules;
 
-export default function ModuleList() {
-  const [expandedModule, setExpandedModule] = useState(null)
+  // Sort modules based on the `order` property
+  const sortedModules = moduleData?.slice().sort((a, b) => a.order - b.order) || [];
+
+  const [expandedModule, setExpandedModule] = useState(null);
 
   const toggleModule = (id) => {
-    setExpandedModule(expandedModule === id ? null : id)
-  }
+    setExpandedModule(expandedModule === id ? null : id);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "completed":
-        return "text-green-500"
+        return "text-green-500";
       case "in-progress":
-        return "text-blue-500"
+        return "text-blue-500";
       case "upcoming":
-        return "text-gray-500"
+        return "text-gray-500";
       default:
-        return "text-gray-500"
+        return "text-gray-500";
     }
-  }
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
       case "in-progress":
-        return <Clock className="h-5 w-5 text-blue-500" />
+        return <Clock className="h-5 w-5 text-blue-500" />;
       case "upcoming":
-        return <Clock className="h-5 w-5 text-gray-500" />
+        return <Clock className="h-5 w-5 text-gray-500" />;
       default:
-        return <Clock className="h-5 w-5 text-gray-500" />
+        return <Clock className="h-5 w-5 text-gray-500" />;
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
-      {moduleData.map((module, index) => (
+      {sortedModules.map((module, index) => (
         <motion.div
           key={module._id}
           initial={{ opacity: 0, y: 20 }}
@@ -156,7 +94,9 @@ export default function ModuleList() {
                   </div>
 
                   <div className="mt-4 flex justify-end">
-                    <button className="text-sm text-primary hover:underline">View Module Details</button>
+                    <button className="text-sm text-primary hover:underline">
+                      View Module Details
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -165,6 +105,5 @@ export default function ModuleList() {
         </motion.div>
       ))}
     </div>
-  )
+  );
 }
-

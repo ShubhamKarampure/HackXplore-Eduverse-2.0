@@ -6,27 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 import { Users, BookOpen, Award } from "lucide-react"
 
-const courseData = {
-  _id: "67e5c8d70b334e947778c738",
-  name: "Introduction to AI",
-  instructor: {
-    _id: "67e4cd88db95232462e03ed0",
-    email: "vipul@gmail.com",
-    firstName: "Vipul",
-    lastName: "Kushwaha",
-  },
-  description:
-    "This beginner-friendly course is designed to introduce the basics of Artificial Intelligence (AI), with a special focus on Machine Learning (ML) and Deep Learning (DL). By the end of the course, learners will have a foundational understanding of these technologies and how they power modern AI applications.",
-  enrollKey: "12345",
-  image: {
-    url: "https://res.cloudinary.com/dim3hi0jc/image/upload/v1743112408/eqbu5ayy4lqx66kdwcv8.webp",
-    publicId: "eqbu5ayy4lqx66kdwcv8",
-  },
-  students: ["67e479d012f898b47fb7509f"],
-  semester: 5,
-}
-
-export default function CourseHeader() {
+export default function CourseHeader({ courseData }) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -41,27 +21,28 @@ export default function CourseHeader() {
             onHoverEnd={() => setIsHovered(false)}
           >
             <img
-              src={courseData.image.url || "/placeholder.svg"}
-              alt={courseData.name}
+              src={courseData?.image?.url || "/placeholder.svg"}
+              alt={courseData?.name || "Course Image"}
               className="w-full h-full object-cover"
             />
-            
           </motion.div>
 
           <div className="p-6 md:w-2/3">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-bold mb-2">{courseData.name}</h1>
+                <h1 className="text-2xl font-bold mb-2">{courseData?.name || "Course Name"}</h1>
                 <p className="text-muted-foreground mb-4">
-                  Instructor: {courseData.instructor.firstName} {courseData.instructor.lastName}
+                  Instructor: {courseData?.instructor?.firstName || "Unknown"} {courseData?.instructor?.lastName || ""}
                 </p>
               </div>
-              <Badge variant="outline" className="bg-primary/10 text-primary">
-                Semester {courseData.semester}
-              </Badge>
+              {courseData?.semester && (
+                <Badge variant="outline" className="bg-primary/10 text-primary">
+                  Semester {courseData.semester}
+                </Badge>
+              )}
             </div>
 
-            <p className="mb-6">{courseData.description}</p>
+            <p className="mb-6">{courseData?.description || "No description available."}</p>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col items-center p-3 bg-primary/5 rounded-lg">
@@ -88,4 +69,3 @@ export default function CourseHeader() {
     </motion.div>
   )
 }
-
