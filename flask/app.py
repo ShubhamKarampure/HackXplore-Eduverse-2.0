@@ -1,15 +1,84 @@
+import os
 from flask import Flask, request, jsonify
 from groq import Groq
 import requests
-import PyPDF2
-from io import BytesIO
 from PyPDF2 import PdfReader
-import requests
+from io import BytesIO
 import re
 import json
+from dotenv import load_dotenv  # Import dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 app = Flask(__name__)
-client = Groq()
+
+# Retrieve API key from environment variables
+groq_api_key = os.getenv("GROQ_API_KEY")
+
+# Ensure API key is set
+if not groq_api_key:
+    raise ValueError("GROQ_API_KEY is not set in the .env file")
+
+# Initialize Groq client with API key
+client = Groq(api_key=groq_api_key)
+
+@app.route('/modules', methods=['POST'])
+def roadmap():
+    data = request.get_json()
+
+    # Check if required fields are present
+    if not data or 'description' not in data:
+        return jsonify({"error": "Missing 'description' in the request."}), 400
+
+    text = data['description']
+    
+    # Create a simplified prompt with fewer modules
+    prompt = f"""
+You are a tutor of a course. Generate a segregate the course into proper module based on this description {text}
+
+Return the result as valid JSON with an array named "modules" containing 8 module objects. Each module should strictly follow this format:
+{{
+  "modules": [
+    {{
+      "title": "Module Title" (In title no need to mention module.),
+      "description": "Module description.",
+      "order": 1,
+    }}
+  ]
+}}
+
+Important: Return only valid JSON with exactly 8 modules. 
+"""
+
+    # Create a completion request with adjusted parameters
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.2,  # Lower temperature for more deterministic output
+        max_tokens=4000,  # Increase token limit
+        top_p=0.9,
+        stream=False,
+        response_format={"type": "json_object"},
+        stop=None,
+    )
+    message_content = completion.choices[0].message.content
+        
+    # If the content is in JSON format, parse it
+    try:
+        json_response = json.loads(message_content)
+        return jsonify(json_response)
+    except json.JSONDecodeError:
+        # Return both the error and the attempted response for debugging
+        return jsonify({
+            "error": "Response is not valid JSON.",
+            "attempted_response": message_content
+        }), 500
 
 # GRADE API 
 @app.route('/grade', methods=['POST'])
@@ -19,8 +88,8 @@ def grade():
     # Check if required fields are present
     if not data or 'pdf_url' not in data or 'criteria' not in data:
         return jsonify({"error": "Missing 'pdf_url' or 'criteria' in the request."}), 400
-
     pdf_url = data['pdf_url']
+    print(pdf_url)
     criteria = data['criteria']
 
     # Download the PDF from the given URL
@@ -100,6 +169,8 @@ def quiz():
     # Check if required fields are present
     if not data or 'description' not in data:
         return jsonify({"error": "Missing 'description' in the request."}), 400
+    
+    print(data)
 
     text = data['description']
     # Create a prompt with the criteria
@@ -219,39 +290,37 @@ def quiz_feedback():
             return jsonify({"error": "Response is not valid JSON."}), 500
 
     return jsonify({"feedback": feedback_list})  # Return the list of feedback responses
-
-@app.route('/roadmap', methods=['POST'])
-def roadmap():
+    
+@app.route('/assign-student-tags', methods=['POST'])
+def assign_tags():
     data = request.get_json()
 
     # Check if required fields are present
-    if not data or 'description' not in data:
-        return jsonify({"error": "Missing 'description' in the request."}), 400
+    if not data or 'about' not in data:
+        return jsonify({"error": "Missing 'about' in the request."}), 400
 
-    text = data['description']
-    # Create a prompt with the criteria
+    about_text = data['about']
+
+    # Create a prompt to assign tags based on the student's "about" text
     prompt = f"""
-You are a tutor. Generate a roadmap for a course in a proper structure. 
-Following is the course description: {text} 
-Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array named "roadmap" consisting of 10 objects, where each object contains a "title" and a "description."
+    You are a tag assignment assistant. Analyze the following student description and assign the top 5 most relevant tags from the provided list.Use knn or decision tree algorithm if necessary. The tags should be relevant to the student's interests, skills, and goals. The tags returned should be diversified and cover a range of topics. If the student description is too vague look for keywords like creative, technology etc. and assign tags accordingly.
 
-Example format (keep the name of keys the same and title as "roadmap"; don't change anything):
-{{
-  "roadmap": [
+    Student Description:
+    {about_text}
+
+    Available Tags:
+    Programming, Data Science, Machine Learning, Artificial Intelligence, Web Development, Mobile Development, Cloud Computing, Cybersecurity, Software Engineering, Database Management, DevOps, UI/UX Design, Game Development, Blockchain, Internet of Things (IoT), Big Data, Business Analytics, Project Management, Digital Marketing, Finance, Entrepreneurship, Leadership, Communication Skills, Creative Writing, Graphic Design, Photography, Music Production, Language Learning, Mathematics, Physics, Biology, Chemistry, History, Psychology, Philosophy.
+
+    Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array of assigned tags, as follows:
+
     {{
-      "title": "Introduction to the Course",
-      "description": "Overview of the course objectives and structure."
-    }},
-    ...
-  ]
-}}
+        "interests": ["Tag1", "Tag2", "Tag3"]
+    }}
 
-Return a valid JSON output without any other lines of text.
-"""
+    Only include tags that are highly relevant to the student's description.
+    """
 
-
-
-    # Create a completion request to grade the assignment
+    # Create a completion request to assign tags
     completion = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
@@ -260,21 +329,286 @@ Return a valid JSON output without any other lines of text.
                 "content": prompt
             }
         ],
-        temperature=1,
-        max_tokens=1024,
+        temperature=0.5,  # Adjust temperature for creativity vs. precision
+        max_tokens=150,
         top_p=1,
         stream=False,
         response_format={"type": "json_object"},
         stop=None,
     )
     message_content = completion.choices[0].message.content
-        
-        # If the content is in JSON format, parse it
+
+    # If the content is in JSON format, parse it
     try:
         json_response = json.loads(message_content)  # Parse the string into a JSON object
         return jsonify(json_response)  # Return the JSON response
     except json.JSONDecodeError:
         return jsonify({"error": "Response is not valid JSON."}), 500
+
+    
+@app.route('/courses/recommendations', methods=['POST'])
+def get_course_recommendations():
+    try:
+        data = request.get_json()
+        
+        # Check if required data is provided
+        if not data or 'userInterests' not in data or 'courses' not in data:
+            return jsonify({"success": False, "error": "User interests and courses are required"}), 400
+        
+        user_interests = data['userInterests']
+        courses = data['courses']
+        
+        if len(courses) == 0:
+            return jsonify({"success": True, "courses": []}), 200
+        
+        # Prepare data for the prompt
+        courses_data = []
+        for course in courses:
+            courses_data.append({
+                "id": course["_id"],
+                "title": course.get("title", ""),  # Adding title for better context
+                "tags": course["tags"],
+            })
+        
+        # Simplified prompt with clearer instructions
+        prompt = f"""
+        You are a course recommendation system. Match user interests with course tags to find relevant courses.
+        
+        User Interests: {json.dumps(user_interests)}
+        
+        Available Courses: {json.dumps(courses_data)}
+        
+        Return a JSON object with this exact format:
+        {{
+            "recommendedItems": [
+                "course_id_1", 
+                "course_id_2"
+            ]
+        }}
+        
+        Include only course IDs in the recommendedItems array, sorted by relevance.
+        """
+
+        # Create a completion request with fallback mechanism
+        try:
+            completion = client.chat.completions.create(
+                model="deepseek-r1-distill-llama-70b",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,  # Lower temperature for more deterministic output
+                max_tokens=500,
+                top_p=1,
+                stream=False,
+                response_format={"type": "json_object"},
+                stop=None
+            )
+            message_content = completion.choices[0].message.content
+
+            # Parse the response
+            groq_data = json.loads(message_content)
+        
+        except Exception as api_error:
+            # Fallback to manual recommendation if AI fails
+            print(f"AI recommendation failed: {str(api_error)}. Using fallback method.")
+            
+            # Simple fallback that matches interests to tags
+            recommended_courses = []
+            for course in courses:
+                # Calculate relevance score based on tag matches
+                score = 0
+                for interest in user_interests:
+                    if interest.lower() in [tag.lower() for tag in course["tags"]]:
+                        score += 1
+                
+                if score > 0:  # Only include courses with at least one matching tag
+                    recommended_courses.append((course["_id"], score))
+            
+            # Sort by relevance score (descending)
+            recommended_courses.sort(key=lambda x: x[1], reverse=True)
+            
+            # Create our own recommendation response
+            groq_data = {
+                "recommendedItems": [course_id for course_id, _ in recommended_courses]
+            }
+        
+        # Check if we have recommendations (either from AI or fallback)
+        if not groq_data or 'recommendedItems' not in groq_data:
+            return jsonify({
+                "success": False, 
+                "error": "Failed to generate recommendations"
+            }), 500
+        
+        # Get sorted object IDs from response
+        sorted_object_ids = groq_data["recommendedItems"]
+        
+        # Create a map for quick lookup of courses
+        course_map = {}
+        for course in courses:
+            course_map[course["_id"]] = course
+        
+        # Sort courses based on recommendation order
+        sorted_courses = [course_map[obj_id] for obj_id in sorted_object_ids if obj_id in course_map]
+        
+        # Add remaining courses that weren't in the recommendations
+        recommended_ids = set(sorted_object_ids)
+        remaining_courses = [course for course in courses if course["_id"] not in recommended_ids]
+        
+        # Combine sorted courses with remaining courses
+        all_sorted_courses = sorted_courses + remaining_courses
+        
+        return jsonify({"success": True, "courses": all_sorted_courses}), 200
+    
+    except Exception as e:
+        print(f"Error in course recommendation: {str(e)}")
+        return jsonify({
+            "success": False, 
+            "error": "Internal server error", 
+            "details": str(e)
+        }), 500
+    
+@app.route('/generate-module-suggestions', methods=['POST'])
+def generate_module_suggestions():
+    data = request.get_json()
+    
+    # Check if required fields are present
+    if not data or 'modules' not in data or 'performance' not in data:
+        return jsonify({"error": "Missing required fields in the request."}), 400
+    
+    modules = data['modules']
+    performance = data['performance']
+    print("performance ",performance)
+    student_id = data.get('student_id', 'unknown')
+    course_id = data.get('course_id', 'unknown')
+    
+    # Create a prompt for generating personalized suggestions
+    prompt = f"""
+    You are an educational AI assistant. Based on the following information, generate three personalized learning suggestions for each module to help the student improve.
+
+    Student Performance: {performance * 100:.2f}% overall
+    Course ID: {course_id}
+    Student ID: {student_id}
+    
+    Modules:
+    {", ".join(modules)}
+    
+    For each module, provide 3 specific, actionable suggestions that will help the student better understand the content and improve their performance. Each suggestion should be concise (maximum 1-2 sentences) and practical.
+    
+    Format your response as a valid JSON object with the following structure:
+    {{
+        "suggestions": {{
+            "ModuleName1": [
+                "Suggestion 1",
+                "Suggestion 2",
+                "Suggestion 3"
+            ],
+            "ModuleName2": [
+                "Suggestion 1",
+                "Suggestion 2",
+                "Suggestion 3"
+            ],
+            ...
+        }}
+    }}
+    
+    Be specific in your suggestions, and tailor them to a student with the given performance level.
+    """
+    
+    # Create a completion request to generate module suggestions
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",  # You can use other Groq models as needed
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.7,  # Slightly higher temperature for creative suggestions
+        max_tokens=1000,  # Allow longer responses for multiple modules
+        top_p=1,
+        stream=False,
+        response_format={"type": "json_object"},
+        stop=None,
+    )
+    message_content = completion.choices[0].message.content
+    
+    # If the content is in JSON format, parse it
+    try:
+        json_response = json.loads(message_content)
+        return jsonify(json_response)
+    except json.JSONDecodeError:
+        return jsonify({"error": "Response from AI model is not valid JSON."}), 500
+
+@app.route('/find-similar-courses', methods=['POST'])
+def find_similar_courses():
+    try:
+        data = request.get_json()
+        
+        # Check if required data is provided
+        if not data or 'courseTitle' not in data or 'courseDescription' not in data:
+            return jsonify({"success": False, "error": "Course title and description are required"}), 400
+        
+        course_title = data['courseTitle']
+        course_description = data['courseDescription']
+        
+        # Prepare prompt for the LLM to search for similar courses
+        prompt = f"""
+        You are a course recommendation assistant. Find similar courses to the one described below from platforms like Khan Academy, Coursera, and YouTube.
+
+        Course Title: {course_title}
+        Course Description: {course_description}
+
+        Return a JSON object with exactly 5 similar courses from different platforms. For each course, provide:
+        1. The title of the course
+        2. The platform it's on (Khan Academy, Coursera, YouTube, Udemy, edX, etc.)
+        3. A direct URL to the course (use realistic URLs based on the platform)
+        4. A brief explanation of why this course is relevant (2-3 sentences max)
+
+        Return the data in this exact format:
+        {{
+            "similarCourses": [
+                {{
+                    "title": "Course Title",
+                    "platform": "Platform Name",
+                    "url": "https://example.com/course-link",
+                    "relevance": "Brief explanation of why this course is relevant"
+                }},
+                ...
+            ]
+        }}
+
+        Ensure all URLs are plausible and properly formatted for each platform. For example:
+        - Coursera URLs typically look like: https://www.coursera.org/learn/course-name
+        - Khan Academy URLs typically look like: https://www.khanacademy.org/subject/topic/course
+        - YouTube URLs typically look like: https://www.youtube.com/playlist?list=PLAYLIST_ID
+        """
+
+        # Create a completion request
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=1000,
+            top_p=1,
+            stream=False,
+            response_format={"type": "json_object"},
+            stop=None
+        )
+        message_content = completion.choices[0].message.content
+
+        # Parse the response
+        json_response = json.loads(message_content)
+        
+        return jsonify({
+            "success": True, 
+            "similarCourses": json_response.get("similarCourses", [])
+        }), 200
+    
+    except Exception as e:
+        print(f"Error finding similar courses: {str(e)}")
+        return jsonify({
+            "success": False, 
+            "error": "Internal server error", 
+            "details": str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

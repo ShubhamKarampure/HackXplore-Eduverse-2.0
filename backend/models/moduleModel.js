@@ -7,14 +7,14 @@ const ModuleSchema = new mongoose.Schema({
   order: { type: Number, required: true },
   contents: {
     video: {
-      title: { type: String, required: true },
-      url: { type: String, required: true },
+      title: { type: String },
+      url: { type: String },
       duration: Number,
       publicId: String,
     },
     resource: {
-      title: { type: String, required: true },
-      url: { type: String, required: true },
+      title: { type: String},
+      url: { type: String },
     },
     quiz: { type: mongoose.Types.ObjectId, ref: "quizzes" },
     assignment: { type: mongoose.Types.ObjectId, ref: "assignments" },

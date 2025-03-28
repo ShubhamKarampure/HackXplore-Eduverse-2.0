@@ -9,11 +9,22 @@ const API_ROUTES = {
         CREATE_PROFILE: `${BACKEND_URL}/create-profile`,
     },
     COURSE: {
+        CREATE: `${BACKEND_URL}/course/`,
         ALL: `${BACKEND_URL}/course/`,
         MY: `${BACKEND_URL}/course/my-courses`,
-        DETAILS: `${BACKEND_URL}/course/`,
+        DETAILS: `${BACKEND_URL}/course`,
         ENROLL: `${BACKEND_URL}/course/student/enroll`
-    }
+    },
+    MODULE: {
+    // Modules CRUD Routes
+    CREATE: `${BACKEND_URL}/modules`,
+    GET_ALL: `${BACKEND_URL}/modules`,
+    GET_BY_ID: `${BACKEND_URL}/modules`,
+    UPDATE:  `${BACKEND_URL}/modules`,
+    DELETE: `${BACKEND_URL}/modules`,
+    // Special route for AI-generated modules
+    GENERATE: `${BACKEND_URL}/modules/generate`
+    },
 };
 
 /*

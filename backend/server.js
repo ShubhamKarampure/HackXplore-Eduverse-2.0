@@ -7,11 +7,13 @@ import { dbConnect } from './database/dbConnect.js'
 import { userRouter } from './routes/userRoutes.js'
 import { adminRouter } from './routes/adminRoutes.js'
 import { CourseRouter } from './routes/CourseRoutes.js'
-import { teacherCourseRouter } from './routes/teacherCourseRoutes.js'
+import { ModuleRouter } from './routes/moduleRoutes.js'
+
 import { teacherAssignmentRouter } from './routes/teacherAssignmentRoutes.js'
 import { studentAssignmentRouter } from './routes/studentAssignmentRoutes.js'
 import { studentQuizRouter } from './routes/studentQuizRoutes.js'
 import messageRotuer from './routes/messagesRoutes.js'
+import fileUpload from 'express-fileupload'
 
 dotenv.config();
 
@@ -19,6 +21,11 @@ dbConnect();
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: '/tmp/',
+  parseNested: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
@@ -29,10 +36,9 @@ app.use(cors({
 
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/user/course', CourseRouter)
-
+app.use('/api/v1/user/modules', ModuleRouter)
 app.use('/api/v1/admin', adminRouter)
 app.use('/api/v1/user/chat', messageRotuer)
-app.use('/api/v1/user/teacher/course', teacherCourseRouter)
 app.use('/api/v1/user/teacher/assignment', teacherAssignmentRouter)
 app.use('/api/v1/user/student/assignment', studentAssignmentRouter)
 app.use('/api/v1/user/student/quiz', studentQuizRouter)

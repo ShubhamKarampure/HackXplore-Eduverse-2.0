@@ -1,6 +1,31 @@
 import API_ROUTES from './route';
 import useUserStore from '@/store/userStore';
 
+
+export async function createCourse(formData) {
+  console.log(formData)
+  try {
+    const response = await fetch(API_ROUTES.COURSE.CREATE, {  
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${useUserStore.getState().token}`,
+      },
+      body: formData, 
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Could not create course');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  } 
+}
+
+
 export async function getAllCourses() {
   try {   
     const response = await fetch(API_ROUTES.COURSE.ALL, {  

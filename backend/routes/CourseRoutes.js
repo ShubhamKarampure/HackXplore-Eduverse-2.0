@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  createCourse,
   getAllCourses,
   enrollCourse,
   getMyCourses,
@@ -19,7 +20,12 @@ router.get("/:courseId",authMiddleware, getCourseDetails); // Get course details
 
 // Student Actions
 router.post("/student/enroll",authMiddleware , enrollCourse); // Enroll in a course
+
+// Teacher Action
+router.post("/", authMiddleware, createCourse);
+
 /*
+
 
 router.delete("/:courseId/unenroll", unenrollStudent); // Unenroll from a course
 
