@@ -1,20 +1,23 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from groq import Groq
 import requests
 from PyPDF2 import PdfReader
 from io import BytesIO
 import re
 import json
-from dotenv import load_dotenv  # Import dotenv
+from dotenv import load_dotenv  
+from RAG.LangChainModel import StudyMaterialRAG
 
 # Load environment variables from .env
 load_dotenv()
 
 app = Flask(__name__)
 
-# Retrieve API key from environment variables
 groq_api_key = os.getenv("GROQ_API_KEY")
+
+# Initialize the StudyMaterialRAG system
+study_system = StudyMaterialRAG()
 
 # Ensure API key is set
 if not groq_api_key:
@@ -22,6 +25,168 @@ if not groq_api_key:
 
 # Initialize Groq client with API key
 client = Groq(api_key=groq_api_key)
+
+@app.route('/syllabus/add', methods=['POST'])
+def add_syllabus():
+    try:
+        # Check if the request has the file part
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part in the request"}), 400
+            
+        file = request.files['file']
+        
+        # If user does not select file, browser also submits an empty part without filename
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+            
+        # Get metadata from form
+        course_id = request.form.get('course_id', '')
+        teacher_id = request.form.get('teacher_id', '')
+        
+        if not course_id or not teacher_id:
+            return jsonify({"error": "Course ID and Teacher ID are required"}), 400
+            
+        # Save file temporarily
+        temp_path = os.path.join(os.getcwd(), "temp_syllabus.pdf")
+        file.save(temp_path)
+        
+        # Extract text and add to system
+        syllabus_text = study_system.extract_text_from_pdf(temp_path)
+        study_system.add_syllabus(syllabus_text, {"course_id": course_id, "teacher_id": teacher_id})
+        
+        # Clean up temporary file
+        os.remove(temp_path)
+        
+        return jsonify({
+            "success": True, 
+            "message": "Syllabus added successfully",
+            "course_id": course_id,
+            "teacher_id": teacher_id
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/reference/add', methods=['POST'])
+def add_reference():
+    try:
+        # Check if the request has the file part
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part in the request"}), 400
+            
+        file = request.files['file']
+        
+        # If user does not select file, browser also submits an empty part without filename
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+            
+        # Get metadata from form
+        source = request.form.get('source', 'Unknown Source')
+        teacher_id = request.form.get('teacher_id', '')
+        
+        if not teacher_id:
+            return jsonify({"error": "Teacher ID is required"}), 400
+            
+        # Save file temporarily
+        temp_path = os.path.join(os.getcwd(), "temp_reference.pdf")
+        file.save(temp_path)
+        
+        # Extract text and add to system
+        reference_text = study_system.extract_text_from_pdf(temp_path)
+        study_system.add_reference_material(reference_text, {"source": source, "teacher_id": teacher_id})
+        
+        # Clean up temporary file
+        os.remove(temp_path)
+        
+        return jsonify({
+            "success": True, 
+            "message": "Reference material added successfully",
+            "source": source,
+            "teacher_id": teacher_id
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/materials/generate', methods=['POST'])
+def generate_materials():
+    try:
+        data = request.get_json()
+        
+        # Check if required data is provided
+        if not data or 'topic' not in data or 'teacher_id' not in data:
+            return jsonify({"error": "Topic and teacher_id are required"}), 400
+        
+        topic = data['topic']
+        teacher_id = data['teacher_id']
+        output_format = data.get('output_format', 'pptx')  # Default to PPTX
+        
+        # Mock material generation (replace with your logic)
+        materials = study_system.create_full_course_materials(topic, teacher_id)
+
+        # Generate markdown file
+        output_file = f"{topic.replace(' ', '_').lower()}_materials.md"
+        file_path = os.path.join(os.getcwd(), output_file)
+        
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write('''---
+marp: true
+theme: gaia
+paginate: true
+backgroundColor: "#1E1E2E"
+color: white
+\n''')
+            for subtopic, content in materials.items():
+                f.write('---\n')
+                f.write(f"### {subtopic}\n\n")
+                f.write(content)
+                f.write("\n\n")
+        
+        # Generate PPTX if requested
+        if output_format in ['pptx', 'ppt']:
+            pptx_file = f"{topic.replace(' ', '_').lower()}_slides.pptx"
+            pptx_path = os.path.join(os.getcwd(), pptx_file)
+            os.system(f"marp {file_path} --pptx -o {pptx_path}")
+            # return send_file(pptx_path, as_attachment=True, download_name=pptx_file,mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+            response = send_file(
+                pptx_path,
+                as_attachment=True
+            )
+            response.headers["Content-Disposition"] = "attachment; filename=virtualisation_slides.pptx"
+            response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            return response
+
+        elif output_format == 'pdf':
+            pdf_file = f"{topic.replace(' ', '_').lower()}.pdf"
+            pdf_path = os.path.join(os.getcwd(), pdf_file)
+            os.system(f"marp {file_path} --pdf -o {pdf_path}")
+
+            return send_file(pdf_path, as_attachment=True, download_name=pdf_file)
+
+        elif output_format == 'html':
+            html_file = f"{topic.replace(' ', '_').lower()}.html"
+            html_path = os.path.join(os.getcwd(), html_file)
+            os.system(f"marp {file_path} --html -o {html_path}")
+
+            return send_file(html_path, as_attachment=True, download_name=html_file)
+
+        else:
+            # Return JSON if requested
+            return jsonify({"success": True, "materials": materials})
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/send',methods=['GET'])
+def send():
+    response = send_file(
+        os.path.join(os.getcwd(),'virtualisation_slides.ppt'),
+        as_attachment=True
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=virtualisation_slides.ppt"
+    response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    return response
 
 @app.route('/modules', methods=['POST'])
 def roadmap():
@@ -156,7 +321,7 @@ def grade():
         return jsonify({"error": "Response is not valid JSON."}), 500
 
 def extract_text_from_pdf(file):
-    reader = PyPDF2.PdfReader(file)
+    reader = PdfReader(file)
     text = ""
     for page in reader.pages:
         text += page.extract_text() or ""  # Handle potential None values
