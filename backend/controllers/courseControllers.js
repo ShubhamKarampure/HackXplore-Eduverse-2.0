@@ -1,6 +1,7 @@
 import { CourseModel } from "../models/courseModel.js";
 import { UserModel } from "../models/userModel.js";
 import { QuizModel } from "../models/quizModel.js";
+import { AssignmentModel } from "../models/assignmentModel.js";
 import { uploadOnCloud ,deleteFromCloud } from "../utils/cloudinary.js";
 import axios from "axios";
 
@@ -265,7 +266,7 @@ export const getMyCourses = async (req, res) => {
         instructor: userId       
       }).populate('instructor', 'firstName lastName')
         .select("name instructor description semester image");   
-      console.log(courses)
+    
     } else {       
       return res.status(403).json({         
         success: false,         
@@ -300,8 +301,8 @@ export const getCourseDetails = async (req, res) => {
       .populate({
         path: 'modules',
         populate: [
-          { path: 'contents.quiz', model: 'quizzes', select: 'questions passingScore' },
-          { path: 'contents.assignment', model: 'assignments', select: 'description deadline criteria' }
+          { path: 'contents.quiz',  select: 'questions passingScore' },
+          { path: 'contents.assignment', select: 'description deadline criteria' }
         ]
       })
       .lean(); // Use .lean() for better performance
@@ -310,12 +311,7 @@ export const getCourseDetails = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Check if user is enrolled or is the instructor
-    const isEnrolled = course.students.some(studentId => 
-      studentId.toString() === userId.toString()
-    );
-    const isInstructor = course.instructor._id.toString() === userId.toString();
-
+    
     res.status(200).json(course);
   } catch (error) {
     console.error('Get course details error:', error);

@@ -133,9 +133,10 @@ export default function CreateCourseForm({ onCancel,onCourseCreated}) {
       }
     });
     try {
-      await createCourse(formData);
+      const response = await createCourse(formData);
+      
       showAlert("Course created successfully", alertTypes.SUCCESS);
-      onCourseCreated
+      onCourseCreated(response.course);
     } catch (error) {
       console.log(error);
       showAlert(error.response?.data?.message || "Error creating course", alertTypes.ERROR);

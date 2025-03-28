@@ -25,6 +25,12 @@ const API_ROUTES = {
     // Special route for AI-generated modules
     GENERATE: `${BACKEND_URL}/modules/generate`
     },
+    QUIZ: {
+    // Modules CRUD Routes
+    GET: `${BACKEND_URL}/quiz`,
+    
+    GENERATE: `${BACKEND_URL}/quiz/generate`
+    },
 };
 
 /*

@@ -20,21 +20,21 @@ const ResourSection = ({
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setResourceFile(file);
-      
-      // Simulate file upload and get URL
       const mockUrl = URL.createObjectURL(file);
       
       onResourceUpload({
         url: mockUrl,
-        title: resourceTitle || file.name
+        title: resourceTitle || file.name,
+        file: file  // Include the actual file for upload
       });
+
+      setResourceFile(file);
     }
   };
 
   const renderResourceContent = () => {
     if (!isEditMode) {
-      // Edit mode - show existing resource or upload option
+      // View mode
       return selectedModule?.contents?.resource ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -86,7 +86,11 @@ const ResourSection = ({
               <p className="text-sm text-gray-600">
                 Current Resource: {resourceData.title || 'Uploaded Resource'}
               </p>
-              <Button variant="destructive" size="sm">
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => onResourceUpload(null)}
+              >
                 Remove
               </Button>
             </div>

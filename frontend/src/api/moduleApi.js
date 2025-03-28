@@ -37,48 +37,6 @@ export async function createModule(moduleData) {
   }
 }
 
-// Get all modules
-export async function getAllModules() {
-  try {
-    const response = await fetch(API_ROUTES.MODULE.GET_ALL, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Could not fetch modules');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Fetch modules error:', error);
-    throw error;
-  }
-}
-
-// Get a single module by ID
-export async function getModuleById(moduleId) {
-  try {
-    const response = await fetch(API_ROUTES.MODULE.GET_BY_ID(moduleId), {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Could not fetch module');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Fetch module error:', error);
-    throw error;
-  }
-}
-
 // Update a module
 export async function updateModule(moduleId, moduleData) {
   try {

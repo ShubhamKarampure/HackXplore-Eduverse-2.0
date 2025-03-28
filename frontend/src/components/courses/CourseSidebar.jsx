@@ -33,8 +33,6 @@ const CourseSidebar = ({
     }
   }, [course]);
 
-
-
   // Initialize original modules when first loaded
   useEffect(() => {
     if (!originalModules && modules) {
@@ -261,52 +259,65 @@ const CourseSidebar = ({
                       <div className="w-full h-12 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></div>
                     ) : (
                       <div className="w-full flex items-center rounded-md p-1 transition-colors duration-200">
-                        <button
-                          onClick={() => {
-                            setSelectedModule(module);
-                            setIsDashboardOpen(false);
-                          }}
-                          className={cn(
-                            "w-full flex items-center rounded-md p-2 transition-colors duration-200",
-                            !isExpanded && !isHovered
-                              ? "lg:justify-center"
-                              : "lg:justify-start",
-                            selectedModule?.order === module.order
-                              ? "bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
-                              : "text-slate-700 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-800"
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "w-8 h-8 flex items-center justify-center rounded-full",
-                              selectedModule?.order === module.order
-                                ? "bg-indigo-500/20 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-400"
-                                : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
-                            )}
-                          >
-                            {moduleIndex + 1}
-                          </span>
+                        <div className="group w-full">
+  <button
+    onClick={() => {
+      setSelectedModule(module);
+      setIsDashboardOpen(false);
+    }}
+    className={cn(
+      "w-full flex items-center rounded-md p-2 transition-colors duration-200",
+      !isExpanded && !isHovered
+        ? "lg:justify-center"
+        : "lg:justify-start",
+      selectedModule?.order === module.order
+        ? "bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
+        : "text-slate-700 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-800"
+    )}
+  >
+    <div className="flex items-center w-full">
+      {/* Module Index */}
+      <span
+        className={cn(
+          "w-8 h-8 flex items-center justify-center rounded-full",
+          selectedModule?.order === module.order
+            ? "bg-indigo-500/20 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-400"
+            : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+        )}
+      >
+        {moduleIndex + 1}
+      </span>
 
-                          {isVisible && (
-                            <div className="ml-3 flex-1 text-left">
-                              <p className="text-sm font-medium break-words line-clamp-2">
-                                {module.title}
-                              </p>
-                            </div>
-                          )}
-                        </button>
+      {/* Module Title */}
+      {isVisible && (
+        <div className="ml-3 flex-1 text-left">
+          <p className="text-sm font-medium break-words line-clamp-2">
+            {module.title}
+          </p>
+        </div>
+      )}
 
-                        {isVisible && (
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-                            <button
-                              onClick={(e) => handleDeleteModule(module, e)}
-                              className="p-1 text-slate-400 hover:text-red-500 rounded-full hover:bg-indigo-100 dark:hover:bg-slate-800"
-                              title="Delete Module"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+      {/* Trash Button Wrapped in a Separate Div */}
+      {isVisible && (
+        <div className="flex items-center gap-1 ml-1">
+          <div
+            className="p-1 text-slate-400 hover:text-red-500 rounded-full hover:bg-indigo-100 dark:hover:bg-slate-800 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Delete Module"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevents triggering parent button click
+              handleDeleteModule(module, e);
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </div>
+        </div>
+      )}
+    </div>
+  </button>
+</div>
+
+
+                        
                       </div>
                     )}
                   </li>

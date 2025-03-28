@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Video, UploadCloud,Clock } from "lucide-react";
+import { Video, UploadCloud, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import Input from "../../form/input/InputField";
 import Button from "../../ui/button/Button";
@@ -12,12 +12,11 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
   const renderVideo = () => {
     const videoUrl = selectedModule?.contents?.video?.url;
     const videoTitle = selectedModule?.contents?.video?.title;
-    const videoDuration = selectedModule?.contents?.video?.duration ?? 0;
-
+   
     if (!videoUrl) return null;
 
     const isYouTubeUrl =
-      videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be");
+      videoUrl?.includes("youtube.com") || videoUrl?.includes("youtu.be");
 
     return (
       <div className="mb-8">
@@ -46,10 +45,7 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
               Your browser does not support the video tag.
             </video>
           )}
-          <div className="p-4 flex items-center text-gray-600 dark:text-gray-400">
-            <Clock className="w-5 h-5 mr-2" />
-            <span>Duration: {Math.floor(videoDuration / 60)} minutes</span>
-          </div>
+         
         </div>
       </div>
     );
@@ -58,22 +54,20 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setVideoFile(file);
-
-      // Simulate file upload and get URL
       const mockUrl = URL.createObjectURL(file);
 
       onVideoUpload({
         url: mockUrl,
-        title: videoTitle || file.name,
-        duration: 0, // You'd typically get this from the file metadata
+        title: videoTitle,
+        file: file  // Include the actual file for upload
       });
+
+      setVideoFile(file);
     }
   };
 
   return (
     <>
-      {/* Video Section */}
       {!isEditMode ? (
         renderVideo()
       ) : (
@@ -84,6 +78,7 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
               Video Content
             </CardTitle>
           </CardHeader>
+          
           <CardContent>
             <div className="space-y-4">
               <div>
@@ -122,7 +117,11 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
                   <p className="text-sm text-gray-600">
                     Current Video: {videoData.title || "Uploaded Video"}
                   </p>
-                  <Button variant="destructive" size="sm">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => onVideoUpload(null)}
+                  >
                     Remove
                   </Button>
                 </div>

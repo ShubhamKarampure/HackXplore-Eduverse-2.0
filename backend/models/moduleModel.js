@@ -9,7 +9,6 @@ const ModuleSchema = new mongoose.Schema({
     video: {
       title: { type: String },
       url: { type: String },
-      duration: Number,
       publicId: String,
     },
     resource: {

@@ -1,62 +1,30 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback} from "react"
-import { Clock, XCircle, ArrowRight, ArrowLeft, AlertTriangle, Maximize, Check} from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Clock, XCircle, ArrowRight, ArrowLeft, AlertTriangle, Maximize, Check, Play} from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import Button from "@/components/ui/button/Button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useAlert } from "@/context/AlertContext"
+import { getQuizByModuleId } from "@/api/quizApi"
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
-const mockQuizData = {
-  id: "module-quiz-01",
-  title: "React Fundamentals Quiz",
-  timeLimit: 900, // 15 minutes in seconds
-  maxFullscreenExitTime: 15, // 15 seconds out of fullscreen before failing
-  questions: [
-    {
-      id: "q1",
-      question: "What is React?",
-      options: {
-        a: "A programming language",
-        b: "A JavaScript library for building user interfaces",
-        c: "A database management system",
-        d: "An operating system",
-      },
-      correctAnswer: "b",
-    },
-    {
-      id: "q2",
-      question: "What does JSX stand for?",
-      options: {
-        a: "JavaScript XML",
-        b: "JavaScript Extensible",
-        c: "Java Syntax Extension",
-        d: "JavaScript Extended",
-      },
-      correctAnswer: "a",
-    },
-    {
-      id: "q3",
-      question: "What is a React Hook?",
-      options: {
-        a: "A type of musical instrument",
-        b: "A way to add state to functional components",
-        c: "A method for styling React components",
-        d: "A database connection method",
-      },
-      correctAnswer: "b",
-    },
-  ],
-}
-const QuizViewPage = ({ moduleId }) => {
+
+const QuizViewPage = () => {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+const courseId = searchParams.get('courseId')
+  const moduleId = params?.moduleId;
+  
   const [quiz, setQuiz] = useState(null)
   const { showAlert, alertTypes } = useAlert();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState({})
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [quizStatus, setQuizStatus] = useState("not-started")
-  const [isFullScreen, setIsFullScreen] = useState(false)
+  
   const [warningCount, setWarningCount] = useState(0)
   const [showFailDialog, setShowFailDialog] = useState(false)
   
@@ -66,9 +34,21 @@ const QuizViewPage = ({ moduleId }) => {
   useEffect(() => {
     // Fetch quiz data
     const fetchQuiz = async () => {
-      setQuiz(mockQuizData)
+      try {
+        const data = await getQuizByModuleId(moduleId);
+        setQuiz(data);
+      } catch (error) {
+        showAlert(
+          "Failed to load quiz. Please try again.", 
+          alertTypes.ERROR
+        );
+        console.error("Quiz fetch error:", error);
+      }
     }
-    fetchQuiz()
+    
+    if (moduleId) {
+      fetchQuiz()
+    }
   }, [moduleId])
 
   useEffect(() => {
@@ -92,7 +72,6 @@ const QuizViewPage = ({ moduleId }) => {
 
   useEffect(() => {
     if (quizStatus === "in-progress") {
-      
       // Add visibility change listener
       const handleVisibilityChange = () => {
         if (document.visibilityState === "hidden") {
@@ -118,9 +97,10 @@ const QuizViewPage = ({ moduleId }) => {
       }
     }
   }, [quizStatus, warningCount])
+
   const startQuiz = async () => {
     setQuizStatus("in-progress")
-    setTimeRemaining(quiz.timeLimit)
+    setTimeRemaining(quiz.duration * 60) // Convert minutes to seconds
   }
 
   const failQuiz = () => {
@@ -131,17 +111,8 @@ const QuizViewPage = ({ moduleId }) => {
     setQuizStatus("failed")
     setShowFailDialog(true)
 
-    // Exit fullscreen
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen()
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen()
-    }
+    
   }
-
-
 
   const handleAnswerSelect = (questionId, selectedOption) => {
     setSelectedAnswers((prev) => ({
@@ -156,20 +127,15 @@ const QuizViewPage = ({ moduleId }) => {
           "Quiz completed successfully.", 
           alertTypes.SUCCESS
         );
-    // Exit full screen when quiz is completed
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen()
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen()
-    }
+    
     calculateResults()
   }
 
   const calculateResults = () => {
     const totalQuestions = quiz.questions.length
-    const correctAnswers = quiz.questions.filter((q) => selectedAnswers[q.id] === q.correctAnswer).length
+    const correctAnswers = quiz.questions.filter((q) => 
+      selectedAnswers[q._id] === q.answer[0]
+    ).length
 
     return {
       totalQuestions,
@@ -238,6 +204,10 @@ const QuizViewPage = ({ moduleId }) => {
     );
   };
 
+  const handleBackToCourses = () => {
+    router.push(`/my-courses/${courseId}?moduleId=${moduleId}`);
+  }
+
   if (!quiz) {
     return <div className="flex justify-center items-center h-screen">Loading quiz...</div>
   }
@@ -259,6 +229,15 @@ const QuizViewPage = ({ moduleId }) => {
               <p className="text-md text-muted-foreground dark:text-gray-400">
                 You received 3 or more warnings for switching tabs or exiting full-screen mode.
               </p>
+              <div className="mt-6 flex justify-center">
+                <Button 
+                  variant="default" 
+                  onClick={handleBackToCourses}
+                  className="dark:bg-primary-foreground dark:text-primary"
+                >
+                  Back to Course
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -286,6 +265,15 @@ const QuizViewPage = ({ moduleId }) => {
                 value={(results.correctAnswers / results.totalQuestions) * 100} 
                 className="mt-4 dark:bg-gray-700" 
               />
+              <div className="mt-6 flex justify-center">
+                <Button 
+                  variant="default" 
+                  onClick={handleBackToCourses}
+                  className="dark:bg-primary-foreground dark:text-primary"
+                >
+                  Back to Course
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -298,12 +286,12 @@ const QuizViewPage = ({ moduleId }) => {
       <div className="max-w-2xl mx-auto p-6 h-screen flex items-center justify-center">
         <Card className="w-full max-h-[600px] overflow-auto">
           <CardHeader>
-            <CardTitle className="dark:text-white">{quiz.title}</CardTitle>
+            <CardTitle className="dark:text-white">{quiz.module.title} Quiz</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <div className="mb-4">
               <p className="text-lg mb-4 dark:text-gray-300">
-                This quiz consists of {quiz.questions.length} questions. You have {formatTime(quiz.timeLimit)} to
+                This quiz consists of {quiz.questions.length} questions. You have {formatTime(quiz.duration * 60)} to
                 complete it.
               </p>
               <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md p-4 mb-6">
@@ -317,7 +305,7 @@ const QuizViewPage = ({ moduleId }) => {
                 </ul>
               </div>
               <Button variant="default" onClick={startQuiz} className="w-full">
-                <Maximize className="mr-2 h-4 w-4" /> Start Quiz
+                <Play className="mr-2 h-4 w-4" /> Start Quiz
               </Button>
             </div>
           </CardContent>
@@ -330,8 +318,9 @@ const QuizViewPage = ({ moduleId }) => {
 
   return (
     <div className="w-4xl mx-auto p-6 h-screen flex items-center justify-center">
-  <Card className="w-full overflow-y-auto">    <CardHeader className="flex flex-row justify-between items-center border-b p-5 dark:border-gray-700">
-          <CardTitle className="dark:text-white">{quiz.title}</CardTitle>
+      <Card className="w-full overflow-y-auto">
+        <CardHeader className="flex flex-row justify-between items-center border-b p-5 dark:border-gray-700">
+          <CardTitle className="dark:text-white">{quiz.module.title} Quiz</CardTitle>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Clock className="text-blue-500 dark:text-white-400" />
@@ -353,10 +342,10 @@ const QuizViewPage = ({ moduleId }) => {
 
             <div className="space-y-3">
               <div className="space-y-3">
-    {Object.entries(currentQuestion.options).map(([key, value]) => 
-      renderAnswerButton(key, value, currentQuestion.id)
-    )}
-  </div>
+                {Object.entries(currentQuestion.options).map(([key, value]) => 
+                  renderAnswerButton(key, value, currentQuestion._id)
+                )}
+              </div>
             </div>
           </div>
 
@@ -374,7 +363,7 @@ const QuizViewPage = ({ moduleId }) => {
               <Button 
                 variant="default" 
                 onClick={handleQuizSubmit} 
-                disabled={!selectedAnswers[currentQuestion.id]}
+                disabled={!selectedAnswers[currentQuestion._id]}
                 className="dark:bg-primary-foreground dark:text-primary"
               >
                 Submit Quiz
@@ -383,7 +372,7 @@ const QuizViewPage = ({ moduleId }) => {
               <Button
                 variant="default"
                 onClick={() => navigateQuestion("next")}
-                disabled={!selectedAnswers[currentQuestion.id]}
+                disabled={!selectedAnswers[currentQuestion._id]}
                 className="dark:bg-primary-foreground dark:text-primary"
               >
                 Next <ArrowRight className="ml-2" />

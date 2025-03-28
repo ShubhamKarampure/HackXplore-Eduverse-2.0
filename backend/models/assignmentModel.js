@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
 const AssignmentSchema = new mongoose.Schema({
-  module: { type: mongoose.Types.ObjectId, ref: "modules", required: true },
-  description: { type: String, required: true },
-  deadline: { type: Date, required: true },
-  criteria: { type: [String], required: true },
+  module: { type: mongoose.Types.ObjectId, ref: "modules"},
+  description: { type: String},
+  deadline: { type: Date },
+  criteria: { type: [String]},
   submissions: [
     {
       student: { type: mongoose.Types.ObjectId, ref: "users" },
