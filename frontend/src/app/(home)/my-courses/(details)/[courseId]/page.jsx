@@ -10,6 +10,8 @@ import AppHeader from "@/layout/AppHeader";
 import CourseSidebar from "@/components/courses/CourseSidebar";
 import { useSidebar } from "@/context/SidebarContext";
 import CourseDashboard from "@/components/courses/CourseDashboard";
+import { PresentationGenerator } from "@/components/content-generation/presentation";
+
 
 const CourseDetailPage = () => {
   const { courseId } = useParams();
@@ -20,6 +22,7 @@ const CourseDetailPage = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [selectedContent, setSelectedContent] = useState(null);
   const [isDashboardOpen, setIsDashboardOpen] = useState(true);
+  const [isPresentationOpen, setIsPresentationOpen] = useState(false);
 
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
@@ -68,8 +71,11 @@ const CourseDetailPage = () => {
       <CourseSidebar 
         course={course} 
         selectedModule={selectedModule} 
+        isDashboardOpen={isDashboardOpen}
+        isPresentationOpen={isPresentationOpen}
         setSelectedModule={setSelectedModule} 
         setIsDashboardOpen={setIsDashboardOpen}
+        setIsPresentationOpen={setIsPresentationOpen}
       />
       <Backdrop />
 
@@ -77,7 +83,8 @@ const CourseDetailPage = () => {
         <AppHeader />
         <div className="min-h-screen">
           {isDashboardOpen && <CourseDashboard course={course} />}
-          {!isDashboardOpen && (
+           {isPresentationOpen && <PresentationGenerator course={course} />}
+          {(!isDashboardOpen && !isPresentationOpen)&& (
             <ModuleContent 
               selectedModule={selectedModule} 
               selectedContent={selectedContent} 
