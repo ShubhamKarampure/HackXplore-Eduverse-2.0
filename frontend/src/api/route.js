@@ -28,7 +28,7 @@ const API_ROUTES = {
     QUIZ: {
     // Modules CRUD Routes
     GET: `${BACKEND_URL}/quiz`,
-    
+    UPDATE:`${BACKEND_URL}/quiz`,
     GENERATE: `${BACKEND_URL}/quiz/generate`
     },
 };

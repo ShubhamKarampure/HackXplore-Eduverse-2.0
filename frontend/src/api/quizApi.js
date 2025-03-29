@@ -39,7 +39,6 @@ export async function createQuiz(moduleId, quizData) {
 
 // Get a quiz by module ID
 export async function getQuizByModuleId(moduleId) {
-    console.log(moduleId)
   try {
     const response = await fetch(`${API_ROUTES.QUIZ.GET}/${moduleId}`, {
       method: 'GET',
@@ -47,11 +46,6 @@ export async function getQuizByModuleId(moduleId) {
     });
 
     const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Could not retrieve quiz');
-    }
-
     return data;
   } catch (error) {
     console.error('Quiz retrieval error:', error);
@@ -59,17 +53,35 @@ export async function getQuizByModuleId(moduleId) {
   }
 }
 
+// generate quiz 
+export async function genearteQuiz(quizConfig) {
+  try {
+    const response = await fetch(API_ROUTES.QUIZ.GENERATE, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(quizConfig)
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Quiz creation error:', error);
+    throw error;
+  }
+}
+
+
 // Update a quiz
 export async function updateQuiz(quizId, quizData) {
   try {
-    const response = await fetch(API_ROUTES.QUIZ.UPDATE(quizId), {
+    const response = await fetch(`${API_ROUTES.QUIZ.UPDATE}/${quizId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(quizData)
     });
 
     const data = await response.json();
-
+  
     if (!response.ok) {
       throw new Error(data.message || 'Could not update quiz');
     }

@@ -8,7 +8,7 @@ import Input from '../../form/input/InputField';
 import Button from '../../ui/button/Button';
 import Label from '../../form/Label';
 
-const ResourSection = ({ 
+const ResourceSection = ({ 
   resourceData, 
   onResourceUpload,
   isEditMode,
@@ -115,4 +115,4 @@ const ResourSection = ({
   );
 };
 
-export default ResourSection;
+export default ResourceSection;

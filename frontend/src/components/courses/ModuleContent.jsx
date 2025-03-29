@@ -19,9 +19,9 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import TextArea from "../form/input/TextArea";
 import VideoSection from "./content/VideoSection";
-import ResourSection from "./content/ResourSection";
+import ResourSection from "./content/ResourceSection";
 import QuizSection from "./content/QuizSection";
-import AssignmentEditSection from "./content/AssignmentEditSection";
+import AssignmentSection from "./content/AssignmentSection";
 import { useAlert } from "@/context/AlertContext";
 import useUserStore from "@/store/userStore";
 import axios from "axios";
@@ -242,11 +242,13 @@ const ModuleContent = ({ selectedModule, onModuleUpdate }) => {
         selectedModule={selectedModule}
       />
 
-      <AssignmentEditSection
+      <AssignmentSection
         assignmentData={moduleData.contents?.assignment}
         onAssignmentUpdate={(assignmentData) =>
           updateModuleContents("assignment", assignmentData)
         }
+              isEditMode={isEditMode}
+              isTeacher={isTeacher}
       />
 
       <QuizSection
@@ -254,8 +256,50 @@ const ModuleContent = ({ selectedModule, onModuleUpdate }) => {
         moduleId={selectedModule._id}
         courseId={selectedModule.course}
         isTeacher={isTeacher}
-      />
-    </div>
+          />
+          <div className="absolute top-6 right-6 z-10">
+        {isEditMode ? (
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              className="text-gray-600 hover:text-gray-900"
+              onClick={() => setEditMode(false)}
+              disabled={isLoading}
+            >
+              <X className="mr-2 w-4 h-4" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveModule}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span>Saving...</span>
+              ) : (
+                <>
+                  <Save className="mr-2 w-4 h-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          isTeacher && (
+            <Button
+              variant="outline"
+              onClick={() => setEditMode(true)}
+              className="text-blue-600 hover:bg-blue-50"
+            >
+              <Edit className="mr-2 w-4 h-4" />
+              Edit Module
+            </Button>
+          )
+        )}
+      </div>
+      </div>
+      
+      
   );
 };
 

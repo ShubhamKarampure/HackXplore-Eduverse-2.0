@@ -1,6 +1,6 @@
 import { QuizModel } from "../models/quizModel.js";
 import { ModuleModel } from "../models/moduleModel.js";
-
+import axios from "axios";
 // Create a new quiz
 export const createQuiz = async (req, res) => {
   try {
@@ -58,5 +58,33 @@ export const deleteQuiz = async (req, res) => {
     res.json({ message: "Quiz deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const generateQuiz = async (req, res) => {
+  const instructor = req.userId;
+  try {
+    const quizConfig = req.body;
+    // Call Flask API to generate modules
+    const response = await axios.post(`${process.env.FLASK_URL}/quiz`, { quizConfig }, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "AI generated quiz successfully",
+      quiz: response.data.quiz,
+    });
+  } catch (error) {
+    console.error("Module generation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };

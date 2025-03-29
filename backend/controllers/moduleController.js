@@ -7,6 +7,15 @@ import axios from "axios";
 
 export const createModule = async (req, res) => {
   const instructor = req.userId;
+  // Track created resources for potential cleanup
+  const createdResources = {
+    quiz: null,
+    assignment: null,
+    videoUpload: null,
+    resourceUpload: null,
+    module: null
+  };
+
   try {
     const { 
       courseId, 
@@ -47,6 +56,7 @@ export const createModule = async (req, res) => {
       passingScore: 0
     });
     await newQuiz.save();
+    createdResources.quiz = newQuiz._id;
 
     const newAssignment = new AssignmentModel({
       moduleId: null, // Will be updated later
@@ -55,6 +65,7 @@ export const createModule = async (req, res) => {
       criteria: ''
     });
     await newAssignment.save();
+    createdResources.assignment = newAssignment._id;
 
     // Handle video upload
     let videoUploadResult = null;
@@ -64,7 +75,11 @@ export const createModule = async (req, res) => {
           req.files.video.tempFilePath, 
           'module-videos'
         );
+        createdResources.videoUpload = videoUploadResult.public_id;
       } catch (uploadError) {
+        // Clean up created resources
+        await cleanupResources(createdResources);
+        
         return res.status(500).json({ 
           success: false, 
           message: 'Failed to upload video',
@@ -81,11 +96,11 @@ export const createModule = async (req, res) => {
           req.files.resource.tempFilePath, 
           'module-resources'
         );
+        createdResources.resourceUpload = resourceUploadResult.public_id;
       } catch (uploadError) {
-        // Rollback video upload if it exists
-        if (videoUploadResult) {
-          await deleteFromCloud(videoUploadResult.public_id);
-        }
+        // Clean up created resources
+        await cleanupResources(createdResources);
+        
         return res.status(500).json({ 
           success: false, 
           message: 'Failed to upload resource',
@@ -111,7 +126,8 @@ export const createModule = async (req, res) => {
         resource: resourceUploadResult 
           ? { 
               title: req.files.resource.name,
-              url: resourceUploadResult.url
+              url: resourceUploadResult.url,
+              publicId: resourceUploadResult.public_id
             } 
           : undefined,
         quiz: newQuiz._id,
@@ -121,10 +137,28 @@ export const createModule = async (req, res) => {
 
     // Save the module
     await newModule.save();
+    createdResources.module = newModule._id;
 
     // Update quiz and assignment with module reference
-    await QuizModel.findByIdAndUpdate(newQuiz._id, { moduleId: newModule._id });
-    await AssignmentModel.findByIdAndUpdate(newAssignment._id, { moduleId: newModule._id });
+    const quizUpdateResult = await QuizModel.findByIdAndUpdate(
+      newQuiz._id, 
+      { moduleId: newModule._id },
+      { new: true }
+    );
+    
+    if (!quizUpdateResult || quizUpdateResult.moduleId.toString() !== newModule._id.toString()) {
+      throw new Error('Failed to update quiz with module reference');
+    }
+
+    const assignmentUpdateResult = await AssignmentModel.findByIdAndUpdate(
+      newAssignment._id, 
+      { moduleId: newModule._id },
+      { new: true }
+    );
+    
+    if (!assignmentUpdateResult || assignmentUpdateResult.moduleId.toString() !== newModule._id.toString()) {
+      throw new Error('Failed to update assignment with module reference');
+    }
 
     // Update course modules
     course.modules.push(newModule._id);
@@ -142,11 +176,53 @@ export const createModule = async (req, res) => {
     });
   } catch (error) {
     console.error('Module creation error:', error);
+    
+    // Clean up all created resources
+    await cleanupResources(createdResources);
+    
     res.status(500).json({ 
       success: false, 
-      message: 'Internal server error',
+      message: 'Internal server error during module creation',
       error: error.message 
     });
+  }
+};
+
+// Helper function to clean up resources when errors occur
+const cleanupResources = async (resources) => {
+  try {
+    // Delete quiz if created
+    if (resources.quiz) {
+      await QuizModel.findByIdAndDelete(resources.quiz);
+    }
+    
+    // Delete assignment if created
+    if (resources.assignment) {
+      await AssignmentModel.findByIdAndDelete(resources.assignment);
+    }
+    
+    // Delete uploaded video if exists
+    if (resources.videoUpload) {
+      await deleteFromCloud(resources.videoUpload);
+    }
+    
+    // Delete uploaded resource if exists
+    if (resources.resourceUpload) {
+      await deleteFromCloud(resources.resourceUpload);
+    }
+    
+    // Delete module if created
+    if (resources.module) {
+      // Remove module reference from course
+      await CourseModel.updateMany(
+        { modules: resources.module },
+        { $pull: { modules: resources.module } }
+      );
+      
+      await ModuleModel.findByIdAndDelete(resources.module);
+    }
+  } catch (cleanupError) {
+    console.error('Error during resource cleanup:', cleanupError);
   }
 };
 
@@ -326,7 +402,6 @@ export const deleteModule = async (req, res) => {
     });
   }
 };
-
 export const getModuleDetails = async (req, res) => {
   try {
     const { moduleId } = req.params;
@@ -346,19 +421,6 @@ export const getModuleDetails = async (req, res) => {
       });
     }
 
-    // Check if user is enrolled or is the instructor
-    const isEnrolled = module.course.students.some(studentId => 
-      studentId.toString() === userId.toString()
-    );
-    const isInstructor = module.course.instructor.toString() === userId.toString();
-
-    if (!isEnrolled && !isInstructor) {
-      return res.status(403).json({ 
-        success: false,
-        message: 'Unauthorized to access this module' 
-      });
-    }
-
     res.status(200).json({
       success: true,
       module
@@ -375,33 +437,74 @@ export const getModuleDetails = async (req, res) => {
 
 export const generateModules = async (req, res) => {
   const instructor = req.userId;
+  // Track created resources
+  const createdResources = {
+    quizzes: [],
+    assignments: [],
+    modules: []
+  };
+  
   try {
     const courseId = req.params.id;
     const course = await CourseModel.findById(courseId);
 
-    // Verify course exists and user is the instructor
+    // Verify course exists
     if (!course) {
       return res.status(404).json({
         success: false,
         message: "Course not found",
       });
     }
-
-   
-
+    
     const description = course.description;
     
+    // Validate course description
+    if (!description || description.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: "Course description is required for module generation",
+      });
+    }
+    
     // Call Flask API to generate modules
-    const response = await axios.post(`${process.env.FLASK_URL}/modules`, { description }, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      withCredentials: true,
-    });
+    let response;
+    try {
+      response = await axios.post(`${process.env.FLASK_URL}/modules`, 
+        { description }, 
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+          timeout: 30000 // 30 second timeout for AI generation
+        }
+      );
+    } catch (apiError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate modules from AI service",
+        error: apiError.message
+      });
+    }
+    
+    // Validate response data
+    if (!response.data || !response.data.modules || !Array.isArray(response.data.modules)) {
+      return res.status(500).json({
+        success: false,
+        message: "Invalid response from module generation service",
+      });
+    }
 
     // Create modules with associated quizzes and assignments
-    const generatedModules = await Promise.all(
-      response.data.modules.map(async (moduleData) => {
+    const generatedModules = [];
+    
+    for (const moduleData of response.data.modules) {
+      try {
+        // Validate required module data
+        if (!moduleData.title || !moduleData.description || moduleData.order === undefined) {
+          throw new Error(`Invalid module data: ${JSON.stringify(moduleData)}`);
+        }
+        
         // Create quiz for the module
         const newQuiz = new QuizModel({
           moduleId: null, // Will be updated later
@@ -409,6 +512,7 @@ export const generateModules = async (req, res) => {
           passingScore: 0
         });
         await newQuiz.save();
+        createdResources.quizzes.push(newQuiz._id);
 
         // Create assignment for the module
         const newAssignment = new AssignmentModel({
@@ -418,6 +522,7 @@ export const generateModules = async (req, res) => {
           criteria: ''
         });
         await newAssignment.save();
+        createdResources.assignments.push(newAssignment._id);
 
         // Create new module
         const newModule = new ModuleModel({
@@ -433,20 +538,44 @@ export const generateModules = async (req, res) => {
 
         // Save the module
         const savedModule = await newModule.save();
+        createdResources.modules.push(savedModule._id);
 
         // Update quiz and assignment with module reference
-        await QuizModel.findByIdAndUpdate(newQuiz._id, { moduleId: savedModule._id });
-        await AssignmentModel.findByIdAndUpdate(newAssignment._id, { moduleId: savedModule._id });
+        const quizUpdateResult = await QuizModel.findByIdAndUpdate(
+          newQuiz._id, 
+          { module: savedModule._id },
+          { new: true }
+        );
+        
+        if (!quizUpdateResult) {
+          throw new Error('Failed to update quiz with module reference');
+        }
+
+        const assignmentUpdateResult = await AssignmentModel.findByIdAndUpdate(
+          newAssignment._id, 
+          { module: savedModule._id },
+          { new: true }
+        );
+        
+        if (!assignmentUpdateResult) {
+          throw new Error('Failed to update assignment with module reference');
+        }
 
         // Add module to course's modules array
         course.modules.push(savedModule._id);
 
         // Populate the module with quiz and assignment details
-        return await ModuleModel.findById(savedModule._id)
+        const populatedModule = await ModuleModel.findById(savedModule._id)
           .populate('contents.quiz')
           .populate('contents.assignment');
-      })
-    );
+          
+        generatedModules.push(populatedModule);
+      } catch (moduleError) {
+        // If any single module fails, clean up all resources and abort
+        await cleanupResources(createdResources, course._id);
+        throw new Error(`Failed to create module: ${moduleError.message}`);
+      }
+    }
 
     // Save the updated course with new modules
     await course.save();
@@ -458,9 +587,13 @@ export const generateModules = async (req, res) => {
     });
   } catch (error) {
     console.error("Module generation error:", error);
+    
+    // Clean up all created resources if not already done
+    await cleanupResources(createdResources, req.params.id);
+    
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error during module generation",
       error: error.message
     });
   }

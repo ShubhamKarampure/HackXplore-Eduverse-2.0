@@ -330,6 +330,8 @@ def extract_text_from_pdf(file):
 @app.route('/quiz', methods=['POST'])
 def quiz():
     data = request.get_json()
+    data = data['quizConfig']
+    print(data)
 
     # Check if required fields are present
     if not data or 'description' not in data:

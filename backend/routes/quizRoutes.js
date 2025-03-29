@@ -3,7 +3,8 @@ import {
   createQuiz, 
   getQuizByModuleId, 
   updateQuiz, 
-  deleteQuiz 
+  deleteQuiz, 
+  generateQuiz
 } from "../controllers/quizController.js";
 
 const router = express.Router();
@@ -11,7 +12,7 @@ const router = express.Router();
 // public 
 // Retrieve a quiz by module ID
 router.get("/:moduleId", getQuizByModuleId);
-
+router.post("/generate", generateQuiz);
 // teacher actions
 
 // Create a new quiz linked to a module

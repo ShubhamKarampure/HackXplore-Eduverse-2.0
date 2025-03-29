@@ -19,7 +19,6 @@ const QuizSchema = new mongoose.Schema(
       },
     ],
     duration: { type: Number}, // Duration in minutes
-    totalMarks: { type: Number}, // Total possible marks
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
 );
