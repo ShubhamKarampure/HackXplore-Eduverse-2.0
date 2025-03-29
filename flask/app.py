@@ -117,6 +117,7 @@ def generate_materials():
         
         # Check if required data is provided
         if not data or 'topic' not in data or 'teacher_id' not in data:
+            print("Error: Missing required fields 'topic' or 'teacher_id' in the request.")
             return jsonify({"error": "Topic and teacher_id are required"}), 400
         
         topic = data['topic']
@@ -132,10 +133,10 @@ def generate_materials():
         
         with open(file_path, "w", encoding="utf-8") as f:
             f.write('''---
-marp: true
-theme: default
-paginate: true
-\n''')
+    marp: true
+    theme: default
+    paginate: true
+    \n''')
             for subtopic, content in materials.items():
                 f.write('---\n')
                 f.write(f"### {subtopic}\n\n")
@@ -147,36 +148,37 @@ paginate: true
             pptx_file = f"{topic.replace(' ', '_').lower()}_slides.pptx"
             pptx_path = os.path.join(os.getcwd(), pptx_file)
             os.system(f"marp {file_path} --pptx -o {pptx_path}")
-            # return send_file(pptx_path, as_attachment=True, download_name=pptx_file,mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+            print(f"PPTX file generated at: {pptx_path}")
             response = send_file(
                 pptx_path,
                 as_attachment=True
             )
-            response.headers["Content-Disposition"] = "attachment; filename=virtualisation_slides.pptx"
+            response.headers["Content-Disposition"] = f"attachment; filename={pptx_file}"
             response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
             return response
 
         elif output_format == 'pdf':
-            pdf_file = f"{topic.replace(' ', '_').lower()}.pdf"
+            pdf_file = f"{topic.replace(' ', '_').lower()}material.pdf"
             pdf_path = os.path.join(os.getcwd(), pdf_file)
             os.system(f"marp {file_path} --pdf -o {pdf_path}")
-
+            print(f"PDF file generated at: {pdf_path}")
             return send_file(pdf_path, as_attachment=True, download_name=pdf_file)
 
         elif output_format == 'html':
             html_file = f"{topic.replace(' ', '_').lower()}.html"
             html_path = os.path.join(os.getcwd(), html_file)
             os.system(f"marp {file_path} --html -o {html_path}")
-
+            print(f"HTML file generated at: {html_path}")
             return send_file(html_path, as_attachment=True, download_name=html_file)
 
         else:
             # Return JSON if requested
+            print("Returning materials as JSON.")
             return jsonify({"success": True, "materials": materials})
         
     except Exception as e:
+        print(f"Error occurred in generate_materials: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/send',methods=['GET'])
 def send():

@@ -83,7 +83,7 @@ const CourseDetailPage = () => {
         <AppHeader />
         <div className="min-h-screen">
           {isDashboardOpen && <CourseDashboard course={course} />}
-           {isPresentationOpen && <PresentationGenerator course={course} />}
+           {isPresentationOpen && <PresentationGenerator courseId={course._id} />}
           {(!isDashboardOpen && !isPresentationOpen)&& (
             <ModuleContent 
               selectedModule={selectedModule} 

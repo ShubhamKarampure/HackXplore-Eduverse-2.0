@@ -10,8 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const generateAndSavePPT = async (req, res) => {
+  const teacher_id = req.userId;
   try {
-    const { teacher_id, course_id, topic } = req.body;
+    const { course_id, topic } = req.body;
     
     // Validate required fields
     if (!teacher_id || !course_id || !topic) {
@@ -20,7 +21,14 @@ export const generateAndSavePPT = async (req, res) => {
         message: "Missing required fields: teacher_id, course_id, or topic",
       });
     }
-
+    
+    console.log(`Making request to Flask API at: ${process.env.FLASK_URL}/materials/generate`);
+    console.log(`Request data: ${JSON.stringify({
+      topic,
+      teacher_id,
+      output_format: "pdf",
+    })}`);
+    
     // Make a request to the Flask API with responseType: 'arraybuffer' for binary data
     const flaskResponse = await axios.post(
       `${process.env.FLASK_URL}/materials/generate`,
@@ -33,10 +41,23 @@ export const generateAndSavePPT = async (req, res) => {
         headers: {
           "Content-Type": "application/json",
         },
-        responseType: "arraybuffer" // This is crucial for binary data
+        withCredentials: true,
+        responseType: "arraybuffer", // This is crucial for binary data
+        timeout: 30000, // Add a reasonable timeout (30 seconds)
+        validateStatus: function (status) {
+          return status < 500; // Resolve only if status code is less than 500
+        }
       }
     );
-
+    
+    // Check if the response is an error (Flask will return JSON with error message)
+    // When error occurs, the data is not a PDF buffer but a JSON string
+    if (flaskResponse.headers['content-type'].includes('application/json')) {
+      // Convert buffer to string to parse the error message
+      const errorMessage = JSON.parse(Buffer.from(flaskResponse.data).toString());
+      throw new Error(`Flask API error: ${errorMessage.error || 'Unknown error'}`);
+    }
+    
     // Log only the size, not the content (which is binary)
     console.log(`Received binary data of size: ${flaskResponse.data.byteLength} bytes`);
     
@@ -45,12 +66,15 @@ export const generateAndSavePPT = async (req, res) => {
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-
-    // Save the received PDF file locally
-    const pdfFileName = `course_${course_id}_teacher_${teacher_id}.pdf`;
+    
+    // Generate unique filename with timestamp
+    const timestamp = Date.now();
+    const pdfFileName = `course_${course_id}_teacher_${teacher_id}_${timestamp}.pdf`;
     const pdfFilePath = path.join(tempDir, pdfFileName);
+    
+    // Save the received PDF file locally
     fs.writeFileSync(pdfFilePath, flaskResponse.data);
-
+    
     console.log(`PDF saved to: ${pdfFilePath}`);
     
     // Check if the file exists and has content
@@ -61,22 +85,22 @@ export const generateAndSavePPT = async (req, res) => {
       if (stats.size > 0) {
         // Upload the PDF file to Cloudinary
         try {
-          const uploadResult = await uploadOnCloud(pdfFilePath, "course-materials");
-          console.log("Upload result:", uploadResult);
-
-          if (uploadResult && uploadResult.url) {
+           const { public_id, url } = await uploadOnCloud(pdfFilePath);
+    
+          
+          if (url ) {
             // Save the material in the database
             const studyMaterial = new StudyMaterialModel({
               teacher_id,
               course_id,
-              material_url: uploadResult.url,
+              material_url: url ,
               format: "pdf",
+              topic: topic
             });
-
+            
             await studyMaterial.save();
             console.log("Study material saved in database");
-
-
+            
             return res.status(201).json({
               success: true,
               message: "PDF generated and saved successfully",
@@ -97,10 +121,13 @@ export const generateAndSavePPT = async (req, res) => {
     }
   } catch (error) {
     console.error("Error generating and saving PDF:", error);
-    res.status(500).json({
+    
+    // Return a more detailed error message to help with debugging
+    return res.status(500).json({
       success: false,
       message: "Failed to generate and save PDF",
       error: error.message,
+      details: error.stack
     });
   }
 };
