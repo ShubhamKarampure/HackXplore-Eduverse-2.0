@@ -1,93 +1,88 @@
 ---
 marp: true
-theme: gaia
+theme: default
 paginate: true
-backgroundColor: "#1E1E2E"
-color: white
 
 ---
 ### Virtualization
 
 ---
-marp=true
-theme=default
+marp: true
+theme: default
 ---
-# Virtualization: An Introduction (T123)
+# Virtualization: An Introduction
 
-*   Based on: "Cloud Computing: Theory and Practice" by Dan C. Marinescu
-*   Virtualization is a key technology in cloud computing.
-*   It separates hardware from software for better system efficiency.
-*   A 2009 Gartner report identified virtualization as a top strategic technology.
-
----
-# The Core Idea
-
-*   Traditional systems: Host OS directly manages hardware.
-*   Virtualization: Multiple guest OSs run on the same hardware, independent of the host OS.
-*   This is achieved by adding a *virtualization layer*.
+*   **Topic:** Virtualization
+*   **Description:** Explores the concept of virtualization and its importance in cloud computing.
+*   **Attribution: 67e4cd88db95232462e03ed0
 
 ---
-# Virtualization Layer: The Hypervisor
+## What is Virtualization?
 
-*   The virtualization layer is also known as the *hypervisor* or *Virtual Machine Monitor (VMM)*.
-*   It manages the VMs.
-*   It converts real hardware into virtual hardware.
-*   Allows different OSs (e.g., Linux, Windows) to run simultaneously on the same physical machine.
+*   Separating hardware from software for improved system efficiency.
+*   Allows multiple operating systems (guest OS) to run on the same hardware, independent of the host OS.
+*   Enhances the use of compute engines, networks, and storage.
+*   Gartner Report (2009): Virtualization was a top strategic technology.
 
 ---
-# Levels of Virtualization Implementation
+## The Virtualization Layer
+
+*   Achieved by adding a *virtualization layer* between the hardware and the operating system.
+*   This layer is known as the **hypervisor** or **Virtual Machine Monitor (VMM)**.
+*   The VMM converts real hardware into virtual hardware.
+*   Enables different OS (e.g., Linux and Windows) to run simultaneously on the same physical machine.
+
+---
+## Levels of Virtualization Implementation
 
 *   **Hardware Abstraction Level:** Virtualization directly on bare hardware.
     *   Creates a virtual hardware environment for VMs.
-    *   Manages underlying hardware.
-    *   Aims to improve hardware utilization by multiple users.
-    *   Example: Xen hypervisor.
+    *   Manages underlying hardware through virtualization.
+    *   Aims to improve hardware utilization by multiple users concurrently.
+    *   Example: Xen hypervisor for x86-based machines.
 
 ---
-# Levels of Virtualization Implementation (cont.)
+## Levels of Virtualization Implementation (cont.)
 
-*   **Operating System Level:** Abstraction layer between OS and applications.
+*   **Operating System Level:** Abstraction layer between the OS and user applications.
     *   Creates isolated containers on a single physical server.
     *   OS instances utilize the hardware.
 
 ---
-# Hypervisor Architecture
+## Hypervisor Architecture
 
-*   Hypervisor sits directly between hardware and OS.
-*   Supports hardware-level virtualization.
-*   Manages CPU, memory, disk, and network interfaces.
+*   Supports hardware-level virtualization on bare metal devices (CPU, memory, disk, network).
+*   Hypervisor sits directly between the physical hardware and the OS.
+*   Also known as VMM.
 
 ---
-# Types of Virtualization Architectures
+## Types of Virtualization Architectures
 
-*   **Hypervisor Architecture:** Described previously.
+*   **Hypervisor Architecture:** Direct access to hardware.
 *   **Paravirtualization:** Guest OS is modified to cooperate with the hypervisor.
 *   **Host-Based Virtualization:** Virtualization layer runs on top of a host OS.
 
 ---
-# Examples of Virtualization Technologies
+## Examples of Virtualization Technologies
 
 *   **VMware Workstation:** Host-based virtualization.
-*   **Xen:** Hypervisor for various architectures (IA-32, x86-64, Itanium, PowerPC). Can modify Linux to act as a hypervisor.
-*   **KVM (Kernel-based Virtual Machine):** Linux kernel virtualization infrastructure. Supports hardware-assisted virtualization and paravirtualization.
+*   **Xen:** Hypervisor for IA-32, x86-64, Itanium, and PowerPC 970 hosts.
+*   **KVM (Kernel-based Virtual Machine):** Linux kernel virtualization infrastructure.
+    *   Supports hardware-assisted virtualization (Intel VT-x or AMD-v).
+    *   Supports paravirtualization (VirtIO framework).
 
 ---
-# KVM and VirtIO
-
-*   KVM uses Intel VT-x or AMD-v for hardware-assisted virtualization.
-*   It uses VirtIO framework for paravirtualization.
-*   VirtIO includes:
-    *   Paravirtual Ethernet card
-    *   Disk I/O controller
-    *   Balloon device (memory management)
-    *   VGA graphics interface
-
----
-# Benefits of Virtualization
+## Benefits of Virtualization
 
 *   Improved resource utilization.
 *   Application flexibility.
 *   Better system efficiency.
 *   Enlarged memory space (virtual memory).
-*   Enhanced use of compute engines, networks, and storage.
+
+---
+## Importance in Cloud Computing
+
+*   Virtualization is fundamental to cloud computing.
+*   Enables efficient resource allocation and management in cloud environments.
+*   Supports the creation of virtual machines and containers, which are essential building blocks for cloud services.
 
