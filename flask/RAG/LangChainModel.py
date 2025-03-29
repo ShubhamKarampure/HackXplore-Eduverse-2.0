@@ -99,6 +99,7 @@ class StudyMaterialRAG:
             Also make only 10 pages slide at max.
             PLEASE DO NOT WRITE HERE IS THE SLIDE CONTENT.
             Also DO NOT write any extra content like this is the slide content.
+            DO NOT ADD IMAGES OF ANY KIND.
             Include proper attribution to source materials and teacher ({teacher_id}).
             DO NOT ADD META DATA FOR MARP AT THE START I HAVE GIVEN IT i.e do not add
             ---
