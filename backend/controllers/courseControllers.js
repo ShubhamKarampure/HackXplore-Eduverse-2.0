@@ -61,6 +61,24 @@ export const createCourse = async (req, res) => {
           error: uploadError.message 
         });
       }
+      try{
+        const vectorDbSyllabusUpload = await axios.post(
+          `${process.env.FLASK_URL}/syllabus/add`,
+          req.files.syllabus.tempFilePath,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }catch(e){
+        console.log("Error uploading syllabus to vector db ",e);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Failed to upload syllabus',
+          error: uploadError.message 
+        });
+      }
     }
 
     // Process textbooks file uploads
