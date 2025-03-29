@@ -13,6 +13,7 @@ const router = express.Router();
 // Retrieve a quiz by module ID
 router.get("/:moduleId", getQuizByModuleId);
 router.post("/generate", generateQuiz);
+router.post("/quiz/feedback", generateQuiz);
 // teacher actions
 
 // Create a new quiz linked to a module

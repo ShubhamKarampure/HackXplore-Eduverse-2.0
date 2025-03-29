@@ -38,7 +38,7 @@ export async function getAllCourses() {
     });
 
     const data = await response.json();
-    console.log(data)
+    
    if (!response.ok) {
       throw new Error(data.message || 'Could not fetch courses');
     }
@@ -60,7 +60,7 @@ export async function getMyCourses() {
     });
 
     const data = await response.json();
-    console.log(data)
+    
    if (!response.ok) {
       throw new Error(data.message || 'Could not fetch courses');
     }
