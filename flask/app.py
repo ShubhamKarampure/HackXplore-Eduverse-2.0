@@ -327,73 +327,86 @@ def grade():
         return jsonify({"error": "Response is not valid JSON."}), 500
 
 @app.route('/quiz', methods=['POST'])
-def quiz():
-    data = request.get_json()
-    data = data['quizConfig']
-    print(data)
+def quiz2():
+    data=request.get_json()
+    data=data['quizConfig']
+    question_level=data.get('questionLevels')
 
-    # Check if required fields are present
-    if not data or 'description' not in data:
-        return jsonify({"error": "Missing 'description' in the request."}), 400
+    res=study_system.generate_quiz_with_config(data['description'],data['totalQuestions'],data['duration'],question_level.get('beginner'),question_level.get('intermediate'),question_level.get('advanced'))
+
+    res=res.replace("```json", "'''").replace("```", "'''").strip()
+    # data=json.loads(res)
+    print(res)
+    return jsonify(json.loads(res)) 
+
+
+# @app.route('/quiz', methods=['POST'])
+# def quiz():
+#     data = request.get_json()
+#     data = data['quizConfig']
+
+#     # Check if required fields are present
+#     if not data or 'description' not in data:
+#         return jsonify({"error": "Missing 'description' in the request."}), 400
     
-    print(data)
+#     print(data)
 
-    text = data['description']
-    # Create a prompt with the criteria
-    prompt = f"""
-    Generate five multiple-choice questions based on the provided topics mentioned in following desciption {text}. For each question, provide exactly four options labeled "a", "b", "c", and "d". The answer should be one of the four options: "a", "b", "c", or "d". 
+#     text = data['description']
+#     # Create a prompt with the criteria
+#     prompt = f"""
+#     Generate five multiple-choice questions based on the provided topics mentioned in following desciption {text}. For each question, provide exactly four options labeled "a", "b", "c", and "d". The answer should be one of the four options: "a", "b", "c", or "d". 
 
-    Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array of question objects, as follows:
+#     Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array of question objects, as follows:
 
-    quiz:[
-    {{
-        "question": "Question text",
-        "options": {{
-            "a": "Option A text", 
-            "b": "Option B text", 
-            "c": "Option C text", 
-            "d": "Option D text"
-        }},
-        "answer": "Correct answer (a, b, c, or d)"
-    }},
-    {{
-        "question": "Question text 2",
-        "options": {{
-            "a": "Option A text 2", 
-            "b": "Option B text 2", 
-            "c": "Option C text 2", 
-            "d": "Option D text 2"
-        }},
-        "answer": "Correct answer 2 (a, b, c, or d)"
-    }},
-    ...
-    ]
-    """
+#     quiz:[
+#     {{
+#         "question": "Question text",
+#         "options": {{
+#             "a": "Option A text", 
+#             "b": "Option B text", 
+#             "c": "Option C text", 
+#             "d": "Option D text"
+#         }},
+#         "answer": "Correct answer (a, b, c, or d)"
+#     }},
+#     {{
+#         "question": "Question text 2",
+#         "options": {{
+#             "a": "Option A text 2", 
+#             "b": "Option B text 2", 
+#             "c": "Option C text 2", 
+#             "d": "Option D text 2"
+#         }},
+#         "answer": "Correct answer 2 (a, b, c, or d)"
+#     }},
+#     ...
+#     ]
+#     """
 
-    # Create a completion request to grade the assignment
-    completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=1,
-        max_tokens=1024,
-        top_p=1,
-        stream=False,
-        response_format={"type": "json_object"},
-        stop=None,
-    )
-    message_content = completion.choices[0].message.content
-        
-        # If the content is in JSON format, parse it
-    try:
-        json_response = json.loads(message_content)  # Parse the string into a JSON object
-        return jsonify(json_response)  # Return the JSON response
-    except json.JSONDecodeError:
-        return jsonify({"error": "Response is not valid JSON."}), 500
+#     # Create a completion request to grade the assignment
+#     completion = client.chat.completions.create(
+#         model="llama-3.1-8b-instant",
+#         messages=[
+#             {
+#                 "role": "user",
+#                 "content": prompt
+#             }
+#         ],
+#         temperature=1,
+#         max_tokens=1024,
+#         top_p=1,
+#         stream=False,
+#         response_format={"type": "json_object"},
+#         stop=None,
+#     )
+#     message_content = completion.choices[0].message.content
+#     print(message_content)
+#         # If the content is in JSON format, parse it
+#     try:
+#         json_response = json.loads(message_content)  # Parse the string into a JSON object
+#         return jsonify(json_response)  # Return the JSON response
+#     except json.JSONDecodeError:
+#         return jsonify({"error": "Response is not valid JSON."}), 500
 
 @app.route('/quiz/feedback', methods=['POST'])
 def quiz_feedback():

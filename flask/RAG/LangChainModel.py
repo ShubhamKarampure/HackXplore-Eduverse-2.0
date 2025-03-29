@@ -317,6 +317,100 @@ class StudyMaterialRAG:
 
         material = self.generate_study_material(topic, teacher_id)
         return {topic.title: material}
+    
+    def generate_quiz_with_config(self, description: str, total_questions: int, duration:str, beginner: int, intermediate: int, advance:int ) -> str:
+        """
+        Generate a quiz based on a description and quiz configuration.
+        First, query the reference store to get related context, then pass it into the prompt.
+
+        Args:
+            description: Description of the quiz topic.
+            total_questions: Number of total questions to generate.
+            duration: Duration of the quiz in minutes.
+            beginner: Number of beginner questions.
+            intermediate: Number of intermediate questions.
+            advance: Number of advanced questions.
+
+        Returns:
+            A JSON string representing the quiz.
+        """
+        # First, get reference context
+        results = self.reference_store.similarity_search(description, k=2)
+        if results:
+            reference_context = "\n\n".join([doc.page_content for doc in results])
+        else:
+            reference_context = "No additional reference materials available."
+
+        # Double braces for literal JSON blocks
+        quiz_prompt = PromptTemplate(
+            template="""Generate a quiz in JSON format based on the following configuration.
+            I AM USING PYTHON KEEP THAT IN MIND WHILE GIVING OUTPUT.
+
+Quiz Description: {description}
+Reference Materials: {reference_context}
+Total Questions: {total_questions}
+Question Levels Distribution: beginner {beginner}, intermediate {intermediate}, advanced {advance}
+Duration: {duration} minutes
+
+For each question, provide exactly four options labeled "a", "b", "c", and "d". The answer should be one of the four options: "a", "b", "c", or "d". 
+
+Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array of question objects, as follows.
+Make sure the model’s prompt instructs it to return only valid JSON (no extra formatting):
+
+quiz:[
+{{
+    "question": "Question text",
+    "options": {{
+        "a": "Option A text", 
+        "b": "Option B text", 
+        "c": "Option C text", 
+        "d": "Option D text"
+    }},
+    "answer": "Correct answer (a, b, c, or d)"
+}},
+{{
+    "question": "Question text 2",
+    "options": {{
+        "a": "Option A text 2", 
+        "b": "Option B text 2", 
+        "c": "Option C text 2", 
+        "d": "Option D text 2"
+    }},
+    "answer": "Correct answer 2 (a, b, c, or d)"
+}},
+...
+]
+
+Please generate exactly {total_questions} questions distributed as follows:
+Beginner: {beginner} questions,
+Intermediate: {intermediate} questions,
+Advanced: {advance} questions.
+Do not include any additional commentary outside of the JSON.
+""",
+            input_variables=[
+                "description",
+                "reference_context",
+                "total_questions",
+                "duration",
+                "beginner",
+                "intermediate",
+                "advance"
+            ],
+        )
+
+
+        chain = quiz_prompt | self.llm
+        result = chain.invoke({
+            "description": description,
+            "reference_context": reference_context,
+            "total_questions": total_questions,
+            "duration": duration,
+            "beginner": beginner,
+            "intermediate": intermediate,
+            "advance": advance
+        })
+
+        return result.content
 
 # # Example usage
 # if __name__ == "__main__":

@@ -83,6 +83,7 @@ export async function getCourseDetails(courseId) {
 
     const data = await response.json();
     console.log(data)
+    localStorage.setItem('courseDetails', JSON.stringify(data))
    if (!response.ok) {
       throw new Error(data.message || 'Could not fetch courses');
     }
