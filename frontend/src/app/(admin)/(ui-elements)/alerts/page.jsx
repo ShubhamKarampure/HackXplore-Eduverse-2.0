@@ -1,5 +1,5 @@
-import ComponentCard from "@/components/common/ComponentCard";
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import ComponentCard from "@/components/courses/dashboard/stats/common/ComponentCard";
+import PageBreadcrumb from "@/components/courses/dashboard/stats/common/PageBreadCrumb";
 import Alert from "@/components/ui/alert/Alert";
 import React from "react";
 

@@ -1,6 +1,6 @@
 import LineChartOne from "@/components/charts/line/LineChartOne";
-import ComponentCard from "@/components/common/ComponentCard";
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import ComponentCard from "@/components/courses/dashboard/stats/common/ComponentCard";
+import PageBreadcrumb from "@/components/courses/dashboard/stats/common/PageBreadCrumb";
 import React from "react";
 
 export default function LineChart() {

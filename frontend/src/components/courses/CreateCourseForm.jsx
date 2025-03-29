@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAlert } from "@/context/AlertContext";
 import { X, Upload, Loader2 } from "lucide-react";
-import ComponentCard from "../common/ComponentCard";
+import ComponentCard from "./dashboard/stats/common/ComponentCard";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Form from "../form/Form";

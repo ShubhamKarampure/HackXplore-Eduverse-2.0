@@ -5,7 +5,7 @@ import {
     FaBook, 
     FaInfo 
 } from 'react-icons/fa';
-import ComponentCard from "../common/ComponentCard";
+import ComponentCard from "../courses/dashboard/stats/common/ComponentCard";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Form from "../form/Form";

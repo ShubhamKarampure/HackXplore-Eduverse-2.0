@@ -1,5 +1,5 @@
-import ComponentCard from "@/components/common/ComponentCard";
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import ComponentCard from "@/components/courses/dashboard/stats/common/ComponentCard";
+import PageBreadcrumb from "@/components/courses/dashboard/stats/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import { BoxIcon } from "@/icons";
 import React from "react";

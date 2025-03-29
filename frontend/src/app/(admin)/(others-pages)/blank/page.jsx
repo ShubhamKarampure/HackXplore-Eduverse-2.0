@@ -1,4 +1,4 @@
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageBreadcrumb from "@/components/courses/dashboard/stats/common/PageBreadCrumb";
 import React from "react";
 
 export default function BlankPage() {

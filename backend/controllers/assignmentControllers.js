@@ -190,7 +190,7 @@ export const getAssignmentByModuleId = async (req, res) => {
 // Submit an assignment
 export const submitAssignment = async (req, res) => {
   try {
-    const studentId = req.params.id;
+    const studentId = req.userId;  
     const { submissionFile } = req.files;
     const { assignmentId } = req.body;
     

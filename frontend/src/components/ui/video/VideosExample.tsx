@@ -1,6 +1,6 @@
 import React from "react";
 import YouTubeEmbed from "./YouTubeEmbed";
-import ComponentCard from "@/components/common/ComponentCard";
+import ComponentCard from "@/components/courses/dashboard/stats/common/ComponentCard";
 
 export default function VideosExample() {
   return (

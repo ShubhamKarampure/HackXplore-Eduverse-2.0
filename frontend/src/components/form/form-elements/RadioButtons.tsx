@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import ComponentCard from "../../common/ComponentCard";
+import ComponentCard from "../../courses/dashboard/stats/common/ComponentCard";
 import Radio from "../input/Radio";
 
 export default function RadioButtons() {

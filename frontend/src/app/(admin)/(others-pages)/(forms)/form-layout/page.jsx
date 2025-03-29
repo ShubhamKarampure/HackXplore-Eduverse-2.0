@@ -1,4 +1,4 @@
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageBreadcrumb from "@/components/courses/dashboard/stats/common/PageBreadCrumb";
 import BasicForm from "@/components/form/example-form/BasicForm";
 import ExampleFormOne from "@/components/form/example-form/ExampleFormOne";
 import ExampleFormTwo from "@/components/form/example-form/ExampleFormTwo";

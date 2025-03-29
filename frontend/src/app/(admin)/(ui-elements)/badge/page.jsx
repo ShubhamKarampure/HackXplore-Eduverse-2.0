@@ -1,4 +1,4 @@
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import PageBreadcrumb from "@/components/courses/dashboard/stats/common/PageBreadCrumb";
 import Badge from "@/components/ui/badge/Badge";
 import { PlusIcon } from "@/icons";
 import React from "react";
