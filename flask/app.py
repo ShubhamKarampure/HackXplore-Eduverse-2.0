@@ -245,7 +245,7 @@ Important: Return only valid JSON with exactly 8 modules.
             "attempted_response": message_content
         }), 500
 
-# GRADE API @app.route('/grade', methods=['POST'])
+@app.route('/grade', methods=['POST'])
 def grade():
     data = request.get_json()
     
@@ -256,7 +256,6 @@ def grade():
     pdf_url = data['pdf_url']
     criteria = data['criteria']
     max_scores = data.get('maxScores', [10] * len(criteria))  # Default to 10 if not provided
-    
     try:
         # Download the PDF content
         response = requests.get(pdf_url)
