@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useSidebar } from "@/context/SidebarContext"
 import { Plus, Trash2, Wand2, BookOpen, Home, Sparkle } from "lucide-react"
 import useUserStore from "@/store/userStore"
-
+import { generateModules } from "@/api/moduleApi"
 import { createModule, deleteModule } from "@/api/moduleApi"
 
 const CourseSidebar = ({
@@ -194,7 +194,7 @@ const CourseSidebar = ({
           </button>
         </div>
 
-        {user.role === "Teacher" &&
+        {user?.role === "Teacher" &&
           <div className="px-3 py-2">
             <button
               onClick={() => {
