@@ -342,7 +342,7 @@ export const gradeAssignmentController = async (req, res) => {
         headers: {
           "Content-type": "application/json"
         },
-        withCredentials: true
+         credentials: true
       }
     );
     
