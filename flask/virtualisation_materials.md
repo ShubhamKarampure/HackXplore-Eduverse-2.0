@@ -1,22 +1,23 @@
 ---
 marp: true
-theme: gaia
+theme: default
 paginate: true
-backgroundColor: "#1E1E2E"
-color: white
 
 ---
 ### Virtualization
 
 ---
-### Virtualization: An Introduction (T123)
+marp: true
+theme: default
+---
+# Virtualization: An Introduction
 
 *   **Topic:** Virtualization
-*   **Description:** Exploring the concept of virtualization and its importance in cloud computing.
-*   **Source:** Based on provided reference materials.
+*   **Description:** Explores the concept of virtualization and its importance in cloud computing.
+*   **Attribution: 67e4cd88db95232462e03ed0
 
 ---
-### What is Virtualization? (T123)
+## What is Virtualization?
 
 *   Separating hardware from software for improved system efficiency.
 *   Allows multiple operating systems (guest OS) to run on the same hardware, independent of the host OS.
@@ -24,62 +25,64 @@ color: white
 *   Gartner Report (2009): Virtualization was a top strategic technology.
 
 ---
-### The Virtualization Layer (T123)
+## The Virtualization Layer
 
-*   Additional software layer called the **hypervisor** or **Virtual Machine Monitor (VMM)**.
-*   Manages VMs and allocates resources.
-*   Responsible for converting real hardware into virtual hardware.
-*   Enables different OS (e.g., Linux, Windows) to run simultaneously on the same physical machine.
-
----
-### Levels of Virtualization Implementation (T123)
-
-*   **Traditional Computer:** Host OS tailored for hardware architecture.
-*   **After Virtualization:** Guest OS managed by their own applications, running on the same hardware.
-*   **Key Component:** Virtualization layer (Hypervisor/VMM).
+*   Achieved by adding a *virtualization layer* between the hardware and the operating system.
+*   This layer is known as the **hypervisor** or **Virtual Machine Monitor (VMM)**.
+*   The VMM converts real hardware into virtual hardware.
+*   Enables different OS (e.g., Linux and Windows) to run simultaneously on the same physical machine.
 
 ---
-### Hypervisor Architecture (T123)
+## Levels of Virtualization Implementation
 
-*   Supports **hardware-level virtualization** on bare metal.
-*   Sits directly between physical hardware and the OS.
-*   Manages CPU, memory, disk, and network interfaces.
-
----
-### Hypervisor and Xen Architecture (T123)
-
-*   Hypervisor software sits directly between the physical hardware and its OS.
-*   This virtualization layer is referred to as either the VMM or the hypervisor.
+*   **Hardware Abstraction Level:** Virtualization directly on bare hardware.
+    *   Creates a virtual hardware environment for VMs.
+    *   Manages underlying hardware through virtualization.
+    *   Aims to improve hardware utilization by multiple users concurrently.
+    *   Example: Xen hypervisor for x86-based machines.
 
 ---
-### Hardware Abstraction Level (T123)
+## Levels of Virtualization Implementation (cont.)
 
-*   Virtualization performed directly on top of the bare hardware.
-*   Creates a virtual hardware environment for a VM.
-*   Manages underlying hardware through virtualization.
-*   Aims to upgrade hardware utilization rate by multiple users concurrently.
-*   Example: Xen hypervisor virtualizing x86-based machines.
+*   **Operating System Level:** Abstraction layer between the OS and user applications.
+    *   Creates isolated containers on a single physical server.
+    *   OS instances utilize the hardware.
 
 ---
-### Operating System Level Virtualization (T123)
+## Hypervisor Architecture
 
-*   Abstraction layer between traditional OS and user applications.
-*   Creates isolated containers on a single physical server.
-*   OS instances utilize the hardware.
-
----
-### Importance in Cloud Computing (T123)
-
-*   Enables resource sharing and isolation.
-*   Supports the creation of virtual clusters dedicated to different tenants.
-*   Critical for cloud infrastructure and service delivery.
+*   Supports hardware-level virtualization on bare metal devices (CPU, memory, disk, network).
+*   Hypervisor sits directly between the physical hardware and the OS.
+*   Also known as VMM.
 
 ---
-### Further Reading (T123)
+## Types of Virtualization Architectures
 
-*   Rosenblum, et al. [53,54]
-*   Smith and Nair [58,59]
-*   VMware white papers [71,72]
-*   Xen hypervisor [7,13,42]
-*   KVM [31]
+*   **Hypervisor Architecture:** Direct access to hardware.
+*   **Paravirtualization:** Guest OS is modified to cooperate with the hypervisor.
+*   **Host-Based Virtualization:** Virtualization layer runs on top of a host OS.
+
+---
+## Examples of Virtualization Technologies
+
+*   **VMware Workstation:** Host-based virtualization.
+*   **Xen:** Hypervisor for IA-32, x86-64, Itanium, and PowerPC 970 hosts.
+*   **KVM (Kernel-based Virtual Machine):** Linux kernel virtualization infrastructure.
+    *   Supports hardware-assisted virtualization (Intel VT-x or AMD-v).
+    *   Supports paravirtualization (VirtIO framework).
+
+---
+## Benefits of Virtualization
+
+*   Improved resource utilization.
+*   Application flexibility.
+*   Better system efficiency.
+*   Enlarged memory space (virtual memory).
+
+---
+## Importance in Cloud Computing
+
+*   Virtualization is fundamental to cloud computing.
+*   Enables efficient resource allocation and management in cloud environments.
+*   Supports the creation of virtual machines and containers, which are essential building blocks for cloud services.
 

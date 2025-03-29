@@ -133,10 +133,8 @@ def generate_materials():
         with open(file_path, "w", encoding="utf-8") as f:
             f.write('''---
 marp: true
-theme: gaia
+theme: default
 paginate: true
-backgroundColor: "#1E1E2E"
-color: white
 \n''')
             for subtopic, content in materials.items():
                 f.write('---\n')
