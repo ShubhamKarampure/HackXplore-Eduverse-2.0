@@ -334,10 +334,15 @@ def quiz2():
 
     res=study_system.generate_quiz_with_config(data['description'],data['totalQuestions'],data['duration'],question_level.get('beginner'),question_level.get('intermediate'),question_level.get('advanced'))
 
-    res=res.replace("```json", "'''").replace("```", "'''").strip()
-    # data=json.loads(res)
-    print(res)
-    return jsonify(json.loads(res)) 
+    res = res.replace("```json", "").replace("```", "").strip()
+    try:
+        res = json.loads(res)
+    except json.JSONDecodeError:
+        # Try additional cleaning if the first attempt fails
+        cleaned = re.sub(r"^['`]+|['`]+$", "", res)
+        res = json.loads(cleaned)
+     
+    return jsonify(res)
 
 
 # @app.route('/quiz', methods=['POST'])
