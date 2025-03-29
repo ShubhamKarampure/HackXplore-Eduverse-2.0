@@ -31,6 +31,7 @@ def add_syllabus():
     try:
         # Check if the request has the file part
         if 'file' not in request.files:
+            print("No file part in the request")
             return jsonify({"error": "No file part in the request"}), 400
             
         file = request.files['file']
@@ -44,6 +45,7 @@ def add_syllabus():
         teacher_id = request.form.get('teacher_id', '')
         
         if not course_id or not teacher_id:
+            print("Course ID and Teacher ID are required")
             return jsonify({"error": "Course ID and Teacher ID are required"}), 400
             
         # Save file temporarily
@@ -81,7 +83,7 @@ def add_reference():
             return jsonify({"error": "No file selected"}), 400
             
         # Get metadata from form
-        source = request.form.get('source', 'Unknown Source')
+        cource = request.form.get('cource', 'Unknown Source')
         teacher_id = request.form.get('teacher_id', '')
         
         if not teacher_id:
@@ -93,7 +95,7 @@ def add_reference():
         
         # Extract text and add to system
         reference_text = study_system.extract_text_from_pdf(temp_path)
-        study_system.add_reference_material(reference_text, {"source": source, "teacher_id": teacher_id})
+        study_system.add_reference_material(reference_text, {"cource": cource, "teacher_id": teacher_id})
         
         # Clean up temporary file
         os.remove(temp_path)
@@ -101,7 +103,7 @@ def add_reference():
         return jsonify({
             "success": True, 
             "message": "Reference material added successfully",
-            "source": source,
+            "cource": cource,
             "teacher_id": teacher_id
         })
         
