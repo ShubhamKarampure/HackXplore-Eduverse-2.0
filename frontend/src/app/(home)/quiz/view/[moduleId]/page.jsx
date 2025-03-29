@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Clock, XCircle, ArrowRight, ArrowLeft, AlertTriangle, Check, Play } from "lucide-react"
+import { Clock, XCircle, ArrowRight, ArrowLeft, AlertTriangle, Check, Play, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import Button from "@/components/ui/button/Button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -22,6 +22,7 @@ const QuizViewPage = () => {
   const [selectedAnswers, setSelectedAnswers] = useState({})
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [quizStatus, setQuizStatus] = useState("not-started")
+  const [showAnswers, setShowAnswers] = useState(false)
 
   const [warningCount, setWarningCount] = useState(0)
   const [showFailDialog, setShowFailDialog] = useState(false)
@@ -118,6 +119,10 @@ const QuizViewPage = () => {
     calculateResults()
   }
 
+  const toggleShowAnswers = () => {
+    setShowAnswers(!showAnswers)
+  }
+
   const calculateResults = () => {
     const totalQuestions = quiz.questions.length
     const correctAnswers = quiz.questions.filter((q) => selectedAnswers[q._id] === q.answer[0]).length
@@ -142,48 +147,137 @@ const QuizViewPage = () => {
       setCurrentQuestionIndex((prev) => prev - 1)
     }
   }
-  const renderAnswerButton = (key, value, questionId) => {
+
+  // Mock feedback for answer options
+  const getAnswerFeedback = (question, option) => {
+    if (option === question.answer[0]) {
+      return "Correct! This is the right answer."
+    }
+
+    const data = {
+      question: question.question,
+      options: question.options,
+      correct_answer : question.answer,
+      user_answer : option,
+    };
+    console.log(data)
+
+    // Mock specific feedback for wrong answers
+    const feedbacks = {
+      a: "This is incorrect. Consider reviewing the concept again.",
+      b: "Close, but not quite right. Check the material on this topic.",
+      c: "This is a common misconception. The correct answer addresses the key points more accurately.",
+      d: "Incorrect. The correct answer provides a more comprehensive solution."
+    }
+    
+    return feedbacks[option] || "Incorrect. Review the material and try again."
+  }
+  
+  const renderAnswerButton = (key, value, questionId, showingAnswers = false, question = null) => {
     const isSelected = selectedAnswers[questionId] === key
+    const isCorrect = showingAnswers && question && key === question.answer[0]
+    const isWrong = showingAnswers && isSelected && key !== question.answer[0]
 
     return (
-      <Button
-        key={key}
-        variant={isSelected ? "default" : "outline"}
-        className={`
-        w-full justify-start text-left h-auto py-2 px-4 relative rounded-lg
-        ${isSelected
-            ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-500 dark:border-indigo-400"
-            : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-          }
-        hover:border-blue-400 dark:hover:border-indigo-400
-        transition-all duration-200 ease-in-out
-        group mb-2
-      `}
-        onClick={() => handleAnswerSelect(questionId, key)}
-      >
-        <span className="flex items-center w-full">
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium mr-2 text-sm">
-            {key.toUpperCase()}
+      <div key={key} className="mb-3">
+        <Button
+          variant={isSelected ? "default" : "outline"}
+          className={`
+          w-full justify-start text-left h-auto py-2 px-4 relative rounded-lg
+          ${isCorrect
+              ? "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 dark:border-emerald-400"
+              : isWrong
+                ? "bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-500 dark:border-rose-400"
+                : isSelected
+                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-500 dark:border-indigo-400"
+                  : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+            }
+          hover:border-blue-400 dark:hover:border-indigo-400
+          transition-all duration-200 ease-in-out
+          group
+        `}
+          onClick={() => !showingAnswers && handleAnswerSelect(questionId, key)}
+          disabled={showingAnswers}
+        >
+          <span className="flex items-center w-full">
+            <span 
+              className={`
+                flex items-center justify-center w-6 h-6 rounded-full 
+                ${isCorrect 
+                  ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200" 
+                  : isWrong 
+                    ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                } 
+                font-medium mr-2 text-sm
+              `}
+            >
+              {key.toUpperCase()}
+            </span>
+            <span className="flex-grow text-sm dark:text-slate-300">{value}</span>
+            {isSelected && !showingAnswers && (
+              <Check
+                className="
+                w-4 h-4 
+                text-blue-500 
+                dark:text-indigo-400 
+                absolute 
+                right-3 
+                top-1/2 
+                -translate-y-1/2
+                opacity-100 
+                group-hover:scale-110 
+                transition-all
+              "
+              />
+            )}
+            {isCorrect && showingAnswers && (
+              <Check
+                className="
+                w-4 h-4 
+                text-green-500 
+                dark:text-green-400 
+                absolute 
+                right-3 
+                top-1/2 
+                -translate-y-1/2
+                opacity-100 
+                transition-all
+              "
+              />
+            )}
+            {isWrong && showingAnswers && (
+              <X
+                className="
+                w-4 h-4 
+                text-red-500 
+                dark:text-red-400 
+                absolute 
+                right-3 
+                top-1/2 
+                -translate-y-1/2
+                opacity-100 
+                transition-all
+              "
+              />
+            )}
           </span>
-          <span className="flex-grow text-sm dark:text-slate-300">{value}</span>
-          {isSelected && (
-            <Check
-              className="
-              w-4 h-4 
-              text-blue-500 
-              dark:text-indigo-400 
-              absolute 
-              right-3 
-              top-1/2 
-              -translate-y-1/2
-              opacity-100 
-              group-hover:scale-110 
-              transition-all
-            "
-            />
-          )}
-        </span>
-      </Button>
+        </Button>
+        
+        {showingAnswers && (isSelected || isCorrect) && (
+          <div 
+            className={`
+              mt-1 mb-2 px-3 py-2 rounded-md text-sm
+              ${isCorrect 
+                ? "bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800/30 text-green-700 dark:text-green-300" 
+                : "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/30 text-red-700 dark:text-red-300"
+              }
+            `}
+          >
+            {getAnswerFeedback(question, key)}
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -244,8 +338,8 @@ const QuizViewPage = () => {
     const isPass = results.percentage >= 70
 
     return (
-      <div className="w-full max-w-4xl mx-auto p-3 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-lg shadow-lg rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="w-full max-w-4xl mx-auto p-3 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 min-h-screen flex flex-col items-center">
+        <Card className="w-full max-w-lg shadow-lg rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6">
           <CardHeader
             className={`p-3 border-b ${isPass ? "bg-green-50 dark:bg-green-900/20" : "bg-amber-50 dark:bg-amber-900/20"
               }`}
@@ -310,7 +404,14 @@ const QuizViewPage = () => {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="p-3 border-t bg-slate-50 dark:bg-slate-900 flex justify-center">
+          <CardFooter className="p-3 border-t bg-slate-50 dark:bg-slate-900 flex justify-center space-x-3">
+            <Button
+              variant="outline"
+              onClick={toggleShowAnswers}
+              className="border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+            >
+              {showAnswers ? "Hide Answers" : "Show Answers"}
+            </Button>
             <Button
               variant="default"
               onClick={handleBackToCourses}
@@ -320,6 +421,28 @@ const QuizViewPage = () => {
             </Button>
           </CardFooter>
         </Card>
+
+        {showAnswers && (
+          <div className="w-full max-w-lg">
+            <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Review Your Answers</h3>
+            {quiz.questions.map((question, index) => (
+              <Card key={question._id} className="mb-4 shadow border border-slate-200 dark:border-slate-800">
+                <CardHeader className="p-3 border-b bg-slate-50 dark:bg-slate-900">
+                  <CardTitle className="text-base font-semibold text-slate-800 dark:text-slate-100">
+                    Question {index + 1}: {question.question}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <div className="space-y-0.5">
+                    {Object.entries(question.options).map(([key, value]) =>
+                      renderAnswerButton(key, value, question._id, true, question),
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -488,4 +611,3 @@ const QuizViewPage = () => {
   )
 }
 export default QuizViewPage
-

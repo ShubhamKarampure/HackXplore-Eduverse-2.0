@@ -88,3 +88,30 @@ export const generateQuiz = async (req, res) => {
     });
   }
 };
+
+
+export const getQuizfeedback = async (req, res) => {
+  try {
+    const data = req.body;
+    // Call Flask API to generate modules
+    const response = await axios.post(`${process.env.FLASK_URL}/quiz/feedback`, {data}, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Generated feedback successfully",
+      quiz: response.data.quiz,
+    });
+  } catch (error) {
+    console.error("Feedback generation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};

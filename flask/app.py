@@ -250,13 +250,14 @@ Important: Return only valid JSON with exactly 8 modules.
 @app.route('/grade', methods=['POST'])
 def grade():
     data = request.get_json()
-    
+    print(data)
     # Check if required fields are present
     if not data or 'pdf_url' not in data or 'criteria' not in data:
         return jsonify({"error": "Missing 'pdf_url' or 'criteria' in the request."}), 400
     
     pdf_url = data['pdf_url']
     criteria = data['criteria']
+    print(criteria)
     max_scores = data.get('maxScores', [10] * len(criteria))  # Default to 10 if not provided
     try:
         # Download the PDF content
@@ -294,8 +295,7 @@ def grade():
     {{
         "grade": (sum of all scores),
         "{criteria[0]}": (score for criterion 1),
-        "{criteria[1]}": (score for criterion 2),
-        "{criteria[2]}": (score for criterion 3),
+       
         "feedback": "Detailed feedback about the submission overall"
     }}
     
@@ -402,62 +402,52 @@ def quiz_feedback():
     data = request.get_json()
 
     # Check if required fields are present
-    if not data or 'questions' not in data:
+    if not data or 'question' not in data:
         return jsonify({"error": "Missing required fields in the request."}), 400
 
-    questions = data['questions']  # Expecting a list of question objects
-    feedback_list = []  # To store feedback for each question
+    question = data['questions']  # Expecting a list of question objects
+    options = data['options']
+    correct_answer = data['answer']
+    user_answer = data['user_answer']
 
-    for item in questions:
-        question = item.get('question')
-        options = item.get('options')
-        correct_answer = item.get('answer')
-        user_answer = item.get('user_answer')
+    # Create a prompt for generating AI feedback with JSON template
+    prompt = f"""
+    You are an AI grading assistant. Provide feedback based on the following question, options, correct answer, and user's answer.
 
-        # Validate each question item
-        if not question or not options or correct_answer is None or user_answer is None:
-            return jsonify({"error": "Missing fields in one or more question items."}), 400
+    Question: {question}
+    Options: {options}
+    Correct Answer: {correct_answer}
+    User's Answer: {user_answer}
 
-        # Create a prompt for generating AI feedback with JSON template
-        prompt = f"""
-        You are an AI grading assistant. Provide feedback based on the following question, options, correct answer, and user's answer.
+    Generate the feedback in valid JSON format, structured as follows:
 
-        Question: {question}
-        Options: {options}
-        Correct Answer: {correct_answer}
-        User's Answer: {user_answer}
+    {{
+    "feedback": "Your feedback message here."
+    }}
 
-        Generate the feedback in valid JSON format, structured as follows:
+    only give feedback no need and make it polite.
+    Provide with explaination & constructive feedback on the user's answer,  offering tips for improvement in one or two line.
+    """
 
-        {{
-            "feedback": "Your feedback message here."
-        }}
+    # Create a completion request to generate feedback
+    completion = client.chat.completions.create(
+    model="llama-3.1-8b-instant",
+    messages=[{"role": "user", "content": prompt}],
+    temperature=1,
+    max_tokens=150,
+    top_p=1,
+    stream=False,
+    response_format={"type": "json_object"},
+    stop=None
+    )
+    message_content = completion.choices[0].message.content
 
-        only give feedback no need and make it polite.
-        Provide constructive feedback on the user's answer, indicating whether it was correct or not and offering tips for improvement.
-        """
-
-        # Create a completion request to generate feedback
-        completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=1,
-            max_tokens=150,
-            top_p=1,
-            stream=False,
-            response_format={"type": "json_object"},
-            stop=None
-        )
-        message_content = completion.choices[0].message.content
-
-        # If the content is in JSON format, parse it
-        try:
-            feedback_response = json.loads(message_content.strip())  # Parse the string into a JSON object
-            feedback_list.append(feedback_response)  # Add feedback to the list
-        except json.JSONDecodeError:
-            return jsonify({"error": "Response is not valid JSON."}), 500
-
-    return jsonify({"feedback": feedback_list})  # Return the list of feedback responses
+    # If the content is in JSON format, parse it
+    try:
+        feedback = json.loads(message_content.strip())  # Parse the string into a JSON object
+    except json.JSONDecodeError:
+        return jsonify({"error": "Response is not valid JSON."}), 500
+    return jsonify({"feedback": feedback})  # Return the list of feedback responses
     
 @app.route('/generate-module-suggestions', methods=['POST'])
 def generate_module_suggestions():
