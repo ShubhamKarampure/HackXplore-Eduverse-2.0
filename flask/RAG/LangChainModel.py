@@ -87,25 +87,43 @@ class StudyMaterialRAG:
         )
 
         self.study_material_prompt = PromptTemplate(
-            template="""Create study material in Marp-compatible markdown format for the following topic.
-            Use the reference information provided to create comprehensive, educational content.
-            
-            Topic: {topic}
-            Topic Description: {description}
-            Reference Materials: {reference_content}
-            
-            The output should be in Marp-compatible markdown with sections, bullet points, and emphasis on key concepts.
-            Add '---' at the start of each slide.
-            Also make only 10 pages slide at max.
-            PLEASE DO NOT WRITE HERE IS THE SLIDE CONTENT.
-            Also DO NOT write any extra content like this is the slide content.
-            DO NOT ADD IMAGES OF ANY KIND.
-            Include proper attribution to source materials and teacher ({teacher_id}).
-            DO NOT ADD META DATA FOR MARP AT THE START I HAVE GIVEN IT i.e do not add
-            ---
-            marp=true
-            theme=default
-            ---
+            template="""Create comprehensive, information-dense slides in Marp-compatible markdown for:
+
+Topic: {topic}
+Description: {description}
+
+Based on these detailed reference materials:
+{reference_content}
+
+Content Requirements:
+- Create approx 20 slides
+- Include extensive factual content, definitions, and explanations
+- Cover the topic thoroughly with academic depth
+- Include relevant theories, methodologies, historical context, and current applications
+- Define all technical terminology completely
+- Incorporate statistics, research findings, and scholarly perspectives
+- Include key examples that demonstrate practical applications
+- Provide comprehensive explanations of complex concepts
+
+Formatting Guidelines:
+- Begin each slide with '---'
+- PLEASE DO NOT ADD ```markdown
+- Make sure the slide do no overflow 
+- Use hierarchical headings to organize dense information (## for main titles, ### for subtitles)
+- Employ multi-level bullet points for detailed breakdowns
+- Format each slide to maximize information while maintaining readability
+- Use **bold** and *italics* to highlight critical terms and concepts
+- Include proper citations/attributions to [Teacher name/ID] and all reference materials
+- ADD reference at the end . Make sure the references are valid and do no use your own brain (which you ofcourse do not have)
+
+DO NOT:
+- Add Marp metadata (I'll handle that separately)
+- ADD Atleast 1 MERMAID DIAGRAMS
+- Include image references
+- Write annotations like "Here is the slide content"
+- Sacrifice depth for brevity
+- Omit important details or nuances
+- ADD ``` markdown code block
             """,
             input_variables=["topic", "description", "reference_content", "teacher_id"]
         )
@@ -317,6 +335,157 @@ class StudyMaterialRAG:
 
         material = self.generate_study_material(topic, teacher_id)
         return {topic.title: material}
+    
+    def generate_quiz_with_config(self, description: str, total_questions: int, duration:str, beginner: int, intermediate: int, advance:int ) -> str:
+        """
+        Generate a quiz based on a description and quiz configuration.
+        First, query the reference store to get related context, then pass it into the prompt.
+
+        Args:
+            description: Description of the quiz topic.
+            total_questions: Number of total questions to generate.
+            duration: Duration of the quiz in minutes.
+            beginner: Number of beginner questions.
+            intermediate: Number of intermediate questions.
+            advance: Number of advanced questions.
+
+        Returns:
+            A JSON string representing the quiz.
+        """
+        # First, get reference context
+        results = self.reference_store.similarity_search(description, k=2)
+        if results:
+            reference_context = "\n\n".join([doc.page_content for doc in results])
+        else:
+            reference_context = "No additional reference materials available."
+
+        # Double braces for literal JSON blocks
+        quiz_prompt = PromptTemplate(
+            template="""Generate a quiz in JSON format based on the following configuration.
+            I AM USING PYTHON KEEP THAT IN MIND WHILE GIVING OUTPUT.
+
+Quiz Description: {description}
+Reference Materials: {reference_context}
+Total Questions: {total_questions}
+Question Levels Distribution: beginner {beginner}, intermediate {intermediate}, advanced {advance}
+Duration: {duration} minutes
+
+For each question, provide exactly four options labeled "a", "b", "c", and "d". The answer should be one of the four options: "a", "b", "c", or "d". 
+
+Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array of question objects, as follows.
+Make sure the model’s prompt instructs it to return only valid JSON (no extra formatting):
+
+quiz:[
+{{
+    "question": "Question text",
+    "options": {{
+        "a": "Option A text", 
+        "b": "Option B text", 
+        "c": "Option C text", 
+        "d": "Option D text"
+    }},
+    "answer": "Correct answer (a, b, c, or d)"
+}},
+{{
+    "question": "Question text 2",
+    "options": {{
+        "a": "Option A text 2", 
+        "b": "Option B text 2", 
+        "c": "Option C text 2", 
+        "d": "Option D text 2"
+    }},
+    "answer": "Correct answer 2 (a, b, c, or d)"
+}},
+...
+]
+
+Please generate exactly {total_questions} questions distributed as follows:
+Beginner: {beginner} questions,
+Intermediate: {intermediate} questions,
+Advanced: {advance} questions.
+Do not include any additional commentary outside of the JSON.
+""",
+            input_variables=[
+                "description",
+                "reference_context",
+                "total_questions",
+                "duration",
+                "beginner",
+                "intermediate",
+                "advance"
+            ],
+        )
+
+
+        chain = quiz_prompt | self.llm
+        result = chain.invoke({
+            "description": description,
+            "reference_context": reference_context,
+            "total_questions": total_questions,
+            "duration": duration,
+            "beginner": beginner,
+            "intermediate": intermediate,
+            "advance": advance
+        })
+
+        return result.content
+
+    def generate_course_modules(self, description: str, num_modules: int = 8) -> str:
+        """
+        Generate a structured course module plan based on a description.
+        
+        Args:
+            description: Description of the course/topic.
+            num_modules: Number of modules to generate (default: 8).
+            
+        Returns:
+            A JSON string representing the course modules structure.
+        """
+        # Query reference store for relevant content
+        results = self.syllabus_store.similarity_search(description, k=3)
+        if results:
+            reference_context = "\n\n".join([doc.page_content for doc in results])
+        else:
+            reference_context = "No additional reference materials available."
+        
+        modules_prompt = PromptTemplate(
+            template="""You are a tutor planning a course. Based on the following course description and reference materials, 
+generate a well-structured course divided into proper modules.
+
+Course Description: {description}
+Reference Materials: {reference_context}
+
+Return the result as valid JSON with an array named "modules" containing exactly {num_modules} module objects. Each module should strictly follow this format:
+{{
+  "modules": [
+    {{
+      "title": "Module Title",
+      "description": "Module description.",
+      "order": 1
+    }}
+  ]
+}}
+
+The modules should build upon each other in a logical learning sequence. Focus on providing comprehensive coverage 
+while ensuring a smooth learning curve.
+
+Important: Return only valid JSON with exactly {num_modules} modules. Do not include any commentary outside the JSON structure.
+""",
+            input_variables=[
+                "description",
+                "reference_context",
+                "num_modules"
+            ],
+        )
+
+        chain = modules_prompt | self.llm
+        result = chain.invoke({
+            "description": description,
+            "reference_context": reference_context,
+            "num_modules": num_modules
+        })
+        
+        return result.content
 
 # # Example usage
 # if __name__ == "__main__":
