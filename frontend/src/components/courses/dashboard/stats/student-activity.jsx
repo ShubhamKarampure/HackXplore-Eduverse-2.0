@@ -34,13 +34,13 @@ export default function StudentActivity() {
   }, [])
 
   return (
-    <div>
-      <div className="h-[250px]">
+    <div className="flex flex-col h-full">
+      <div className="h-60">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-            <XAxis dataKey="day" />
-            <YAxis />
+            <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} width={30} />
             <Tooltip />
             <Area type="monotone" dataKey="morning" stackId="1" stroke="#8884d8" fill="#8884d8" name="Morning" />
             <Area type="monotone" dataKey="afternoon" stackId="1" stroke="#82ca9d" fill="#82ca9d" name="Afternoon" />
@@ -49,11 +49,11 @@ export default function StudentActivity() {
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-3 gap-2 mt-2">
         {["Morning", "Afternoon", "Evening"].map((time, index) => (
           <motion.div
             key={time}
-            className="p-3 rounded-lg"
+            className="p-2 rounded-lg"
             style={{
               backgroundColor: index === 0 ? "#8884d820" : index === 1 ? "#82ca9d20" : "#ffc65820",
             }}
@@ -61,14 +61,16 @@ export default function StudentActivity() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <p className="text-xs text-muted-foreground mb-1">{time} Activity</p>
+            <p className="text-xs text-muted-foreground">
+              {time}
+            </p>
             <p
-              className="text-xl font-bold"
+              className="text-lg font-bold"
               style={{
                 color: index === 0 ? "#8884d8" : index === 1 ? "#82ca9d" : "#ffc658",
               }}
             >
-              {data.reduce((sum, item) => sum + item[time.toLowerCase()], 0)} sessions
+              {data.reduce((sum, item) => sum + item[time.toLowerCase()], 0)}
             </p>
           </motion.div>
         ))}
@@ -76,4 +78,3 @@ export default function StudentActivity() {
     </div>
   )
 }
-

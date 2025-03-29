@@ -24,7 +24,7 @@ const generateProgressData = () => {
     cumulativeProgress = Math.min(100, cumulativeProgress)
 
     data.push({
-      week: `Week ${week}`,
+      week: `W${week}`,
       progress: Math.round(cumulativeProgress),
       target: Math.min(100, week * 12.5), // Linear target line
     })
@@ -82,13 +82,13 @@ export default function ProgressChart() {
   const progressDifference = currentProgress - targetProgress
 
   return (
-    <div>
-      <div className="h-[250px]">
+    <div className="flex flex-col h-full">
+      <div className="h-60">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-            <XAxis dataKey="week" />
-            <YAxis domain={[0, 100]} />
+            <XAxis dataKey="week" tick={{ fontSize: 12 }} />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} width={30} />
             <Tooltip />
             <Line
               type="monotone"
@@ -104,44 +104,44 @@ export default function ProgressChart() {
               dataKey="progress"
               stroke="#3b82f6"
               strokeWidth={3}
-              dot={{ r: 4, fill: "#3b82f6" }}
-              activeDot={{ r: 6, fill: "#3b82f6" }}
+              dot={{ r: 3, fill: "#3b82f6" }}
+              activeDot={{ r: 5, fill: "#3b82f6" }}
               isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-4">
+      <div className="mt-2 grid grid-cols-3 gap-2">
         <motion.div
-          className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
+          className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <p className="text-xs text-muted-foreground mb-1">Current Progress</p>
-          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{currentProgress}%</p>
+          <p className="text-xs text-muted-foreground">Current</p>
+          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{currentProgress}%</p>
         </motion.div>
 
         <motion.div
-          className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/20"
+          className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800/20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <p className="text-xs text-muted-foreground mb-1">Target Progress</p>
-          <p className="text-xl font-bold text-gray-600 dark:text-gray-400">{targetProgress}%</p>
+          <p className="text-xs text-muted-foreground">Target</p>
+          <p className="text-lg font-bold text-gray-600 dark:text-gray-400">{targetProgress}%</p>
         </motion.div>
 
         <motion.div
-          className={`p-3 rounded-lg ${progressDifference >= 0 ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}
+          className={`p-2 rounded-lg ${progressDifference >= 0 ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <p className="text-xs text-muted-foreground mb-1">Difference</p>
+          <p className="text-xs text-muted-foreground">Diff</p>
           <p
-            className={`text-xl font-bold ${progressDifference >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+            className={`text-lg font-bold ${progressDifference >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
           >
             {progressDifference >= 0 ? "+" : ""}
             {progressDifference}%
@@ -151,4 +151,3 @@ export default function ProgressChart() {
     </div>
   )
 }
-

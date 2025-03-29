@@ -302,7 +302,7 @@ export const getCourseDetails = async (req, res) => {
         path: 'modules',
         populate: [
           { path: 'contents.quiz',  select: 'questions passingScore' },
-          { path: 'contents.assignment', select: 'description deadline criteria' }
+          { path: 'contents.assignment', select: 'title description deadline criteria' }
         ]
       })
       .lean(); // Use .lean() for better performance

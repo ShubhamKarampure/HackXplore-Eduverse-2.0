@@ -10,6 +10,7 @@ import { ModuleRouter } from './routes/moduleRoutes.js'
 import { quizRouter } from './routes/quizRoutes.js'
 
 import fileUpload from 'express-fileupload'
+import { assignmentRouter } from './routes/assignmentRoutes.js'
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/api/v1/user', userRouter)
 app.use('/api/v1/user/course', CourseRouter)
 app.use('/api/v1/user/modules', ModuleRouter)
 app.use('/api/v1/user/quiz', quizRouter)
+app.use('/api/v1/user/assignments', assignmentRouter)
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`.bgBlue.bold);
