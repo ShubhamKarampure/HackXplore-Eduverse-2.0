@@ -412,6 +412,63 @@ Do not include any additional commentary outside of the JSON.
 
         return result.content
 
+    def generate_course_modules(self, description: str, num_modules: int = 8) -> str:
+        """
+        Generate a structured course module plan based on a description.
+        
+        Args:
+            description: Description of the course/topic.
+            num_modules: Number of modules to generate (default: 8).
+            
+        Returns:
+            A JSON string representing the course modules structure.
+        """
+        # Query reference store for relevant content
+        results = self.syllabus_store.similarity_search(description, k=3)
+        if results:
+            reference_context = "\n\n".join([doc.page_content for doc in results])
+        else:
+            reference_context = "No additional reference materials available."
+        
+        modules_prompt = PromptTemplate(
+            template="""You are a tutor planning a course. Based on the following course description and reference materials, 
+generate a well-structured course divided into proper modules.
+
+Course Description: {description}
+Reference Materials: {reference_context}
+
+Return the result as valid JSON with an array named "modules" containing exactly {num_modules} module objects. Each module should strictly follow this format:
+{{
+  "modules": [
+    {{
+      "title": "Module Title",
+      "description": "Module description.",
+      "order": 1
+    }}
+  ]
+}}
+
+The modules should build upon each other in a logical learning sequence. Focus on providing comprehensive coverage 
+while ensuring a smooth learning curve.
+
+Important: Return only valid JSON with exactly {num_modules} modules. Do not include any commentary outside the JSON structure.
+""",
+            input_variables=[
+                "description",
+                "reference_context",
+                "num_modules"
+            ],
+        )
+
+        chain = modules_prompt | self.llm
+        result = chain.invoke({
+            "description": description,
+            "reference_context": reference_context,
+            "num_modules": num_modules
+        })
+        
+        return result.content
+
 # # Example usage
 # if __name__ == "__main__":
 #     study_system = StudyMaterialRAG()

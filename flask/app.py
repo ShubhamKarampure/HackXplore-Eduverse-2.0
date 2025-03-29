@@ -188,8 +188,8 @@ def send():
     response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     return response
 
-@app.route('/modules', methods=['POST'])
-def roadmap():
+@app.route('/modules',methods=['POST'])
+def roadmap2():
     data = request.get_json()
 
     # Check if required fields are present
@@ -197,53 +197,76 @@ def roadmap():
         return jsonify({"error": "Missing 'description' in the request."}), 400
 
     text = data['description']
-    
-    # Create a simplified prompt with fewer modules
-    prompt = f"""
-You are a tutor of a course. Generate a segregate the course into proper module based on this description {text}
+    print(text)
+    res=study_system.generate_course_modules(text)
 
-Return the result as valid JSON with an array named "modules" containing 8 module objects. Each module should strictly follow this format:
-{{
-  "modules": [
-    {{
-      "title": "Module Title" (In title no need to mention module.),
-      "description": "Module description.",
-      "order": 1,
-    }}
-  ]
-}}
-
-Important: Return only valid JSON with exactly 8 modules. 
-"""
-
-    # Create a completion request with adjusted parameters
-    completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.2,  # Lower temperature for more deterministic output
-        max_tokens=4000,  # Increase token limit
-        top_p=0.9,
-        stream=False,
-        response_format={"type": "json_object"},
-        stop=None,
-    )
-    message_content = completion.choices[0].message.content
-        
-    # If the content is in JSON format, parse it
+    res = res.replace("```json", "").replace("```", "").strip()
     try:
-        json_response = json.loads(message_content)
-        return jsonify(json_response)
+        res = json.loads(res)
     except json.JSONDecodeError:
-        # Return both the error and the attempted response for debugging
-        return jsonify({
-            "error": "Response is not valid JSON.",
-            "attempted_response": message_content
-        }), 500
+        # Try additional cleaning if the first attempt fails
+        cleaned = re.sub(r"^['`]+|['`]+$", "", res)
+        res = json.loads(cleaned)
+     
+    return jsonify(res)
+
+
+# @app.route('/modules', methods=['POST'])
+# def roadmap():
+#     data = request.get_json()
+
+#     # Check if required fields are present
+#     if not data or 'description' not in data:
+#         return jsonify({"error": "Missing 'description' in the request."}), 400
+
+#     text = data['description']
+    
+#     # Create a simplified prompt with fewer modules
+#     prompt = f"""
+# You are a tutor of a course. Generate a segregate the course into proper module based on this description {text}
+
+# Return the result as valid JSON with an array named "modules" containing 8 module objects. Each module should strictly follow this format:
+# {{
+#   "modules": [
+#     {{
+#       "title": "Module Title" (In title no need to mention module.),
+#       "description": "Module description.",
+#       "order": 1,
+#     }}
+#   ]
+# }}
+
+# Important: Return only valid JSON with exactly 8 modules. 
+# """
+
+#     # Create a completion request with adjusted parameters
+#     completion = client.chat.completions.create(
+#         model="llama-3.1-8b-instant",
+#         messages=[
+#             {
+#                 "role": "user",
+#                 "content": prompt
+#             }
+#         ],
+#         temperature=0.2,  # Lower temperature for more deterministic output
+#         max_tokens=4000,  # Increase token limit
+#         top_p=0.9,
+#         stream=False,
+#         response_format={"type": "json_object"},
+#         stop=None,
+#     )
+#     message_content = completion.choices[0].message.content
+        
+#     # If the content is in JSON format, parse it
+#     try:
+#         json_response = json.loads(message_content)
+#         return jsonify(json_response)
+#     except json.JSONDecodeError:
+#         # Return both the error and the attempted response for debugging
+#         return jsonify({
+#             "error": "Response is not valid JSON.",
+#             "attempted_response": message_content
+#         }), 500
 
 @app.route('/grade', methods=['POST'])
 def grade():
