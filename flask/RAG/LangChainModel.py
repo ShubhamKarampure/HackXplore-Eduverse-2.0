@@ -87,25 +87,43 @@ class StudyMaterialRAG:
         )
 
         self.study_material_prompt = PromptTemplate(
-            template="""Create study material in Marp-compatible markdown format for the following topic.
-            Use the reference information provided to create comprehensive, educational content.
-            
-            Topic: {topic}
-            Topic Description: {description}
-            Reference Materials: {reference_content}
-            
-            The output should be in Marp-compatible markdown with sections, bullet points, and emphasis on key concepts.
-            Add '---' at the start of each slide.
-            Also make only 10 pages slide at max.
-            PLEASE DO NOT WRITE HERE IS THE SLIDE CONTENT.
-            Also DO NOT write any extra content like this is the slide content.
-            DO NOT ADD IMAGES OF ANY KIND.
-            Include proper attribution to source materials and teacher ({teacher_id}).
-            DO NOT ADD META DATA FOR MARP AT THE START I HAVE GIVEN IT i.e do not add
-            ---
-            marp=true
-            theme=default
-            ---
+            template="""Create comprehensive, information-dense slides in Marp-compatible markdown for:
+
+Topic: {topic}
+Description: {description}
+
+Based on these detailed reference materials:
+{reference_content}
+
+Content Requirements:
+- Create approx 20 slides
+- Include extensive factual content, definitions, and explanations
+- Cover the topic thoroughly with academic depth
+- Include relevant theories, methodologies, historical context, and current applications
+- Define all technical terminology completely
+- Incorporate statistics, research findings, and scholarly perspectives
+- Include key examples that demonstrate practical applications
+- Provide comprehensive explanations of complex concepts
+
+Formatting Guidelines:
+- Begin each slide with '---'
+- PLEASE DO NOT ADD ```markdown
+- Make sure the slide do no overflow 
+- Use hierarchical headings to organize dense information (## for main titles, ### for subtitles)
+- Employ multi-level bullet points for detailed breakdowns
+- Format each slide to maximize information while maintaining readability
+- Use **bold** and *italics* to highlight critical terms and concepts
+- Include proper citations/attributions to [Teacher name/ID] and all reference materials
+- ADD reference at the end . Make sure the references are valid and do no use your own brain (which you ofcourse do not have)
+
+DO NOT:
+- Add Marp metadata (I'll handle that separately)
+- ADD Atleast 1 MERMAID DIAGRAMS
+- Include image references
+- Write annotations like "Here is the slide content"
+- Sacrifice depth for brevity
+- Omit important details or nuances
+- ADD ``` markdown code block
             """,
             input_variables=["topic", "description", "reference_content", "teacher_id"]
         )

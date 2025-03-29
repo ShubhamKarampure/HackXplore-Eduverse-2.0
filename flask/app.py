@@ -110,6 +110,14 @@ def add_reference():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+import re
+
+def clean_markdown_content(content):
+    """Clean content using regex for more precise replacements"""
+    # Replace code blocks with HTML alternatives
+    # content=re.sub(r"```markdown","",content)
+    return content
+
 @app.route('/materials/generate', methods=['POST'])
 def generate_materials():
     try:
@@ -139,14 +147,15 @@ paginate: true
             for subtopic, content in materials.items():
                 f.write('---\n')
                 f.write(f"### {subtopic}\n\n")
-                f.write(content)
+                clean_content=clean_markdown_content(content)
+                f.write(clean_content)
                 f.write("\n\n")
-        
+        os.system(f" mmdc -i {file_path} -o {file_path} ")
         # Generate PPTX if requested
         if output_format in ['pptx', 'ppt']:
             pptx_file = f"{topic.replace(' ', '_').lower()}_slides.pptx"
             pptx_path = os.path.join(os.getcwd(), pptx_file)
-            os.system(f"marp {file_path} --pptx -o {pptx_path}")
+            os.system(f"marp --allow-local-files {file_path} --pptx -o {pptx_path}")
             # return send_file(pptx_path, as_attachment=True, download_name=pptx_file,mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation")
             response = send_file(
                 pptx_path,
@@ -159,14 +168,14 @@ paginate: true
         elif output_format == 'pdf':
             pdf_file = f"{topic.replace(' ', '_').lower()}.pdf"
             pdf_path = os.path.join(os.getcwd(), pdf_file)
-            os.system(f"marp {file_path} --pdf -o {pdf_path}")
+            os.system(f"marp --allow-local-files {file_path} --pdf -o {pdf_path}")
 
             return send_file(pdf_path, as_attachment=True, download_name=pdf_file)
 
         elif output_format == 'html':
             html_file = f"{topic.replace(' ', '_').lower()}.html"
             html_path = os.path.join(os.getcwd(), html_file)
-            os.system(f"marp {file_path} --html -o {html_path}")
+            os.system(f"marp --allow-local-files {file_path} --html -o {html_path}")
 
             return send_file(html_path, as_attachment=True, download_name=html_file)
 
