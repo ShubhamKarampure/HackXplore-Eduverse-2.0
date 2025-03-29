@@ -207,7 +207,7 @@ const QuizCreationPage = () => {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
-                    Questions ({questions.length})
+                    Questions ({questions?.length})
                   </h3>
                   <Button
                     variant="outline"
