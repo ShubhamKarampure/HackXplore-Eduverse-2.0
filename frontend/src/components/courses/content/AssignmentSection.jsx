@@ -11,7 +11,6 @@ import Input from '../../form/input/InputField';
 import Button from '../../ui/button/Button';
 import Label from '../../form/Label';
 import DatePicker from 'react-datepicker';
-import axios from 'axios';
 import { useAlert } from '@/context/AlertContext';
 import 'react-datepicker/dist/react-datepicker.css';
 // Import Froala Editor
@@ -19,6 +18,7 @@ import FroalaEditor from 'react-froala-wysiwyg';
 import 'froala-editor/css/froala_style.min.css';
 import 'froala-editor/css/froala_editor.pkgd.min.css';
 import StudentAssignmentView from './StudentView';
+import axiosInstance from '@/lib/axiosInstance';
 
 const AssignmentSection = ({
   isTeacher = false,
@@ -35,8 +35,14 @@ const AssignmentSection = ({
   const [description, setDescription] = useState(
     assignmentData?.description || ''
   );
-  const [criteria, setCriteria] = useState(assignmentData?.criteria || []);
-  const [newCriterion, setNewCriterion] = useState('');
+  const [criteria, setCriteria] = useState(
+    assignmentData?.criteria || []
+  );
+  const [newCriterionName, setNewCriterionName] = useState('');
+  const [newCriterionMaxScore, setNewCriterionMaxScore] = useState(10);
+  const [totalPoints, setTotalPoints] = useState(
+    assignmentData?.totalPoints || 100
+  );
   const [deadline, setDeadline] = useState(
     assignmentData?.deadline ? new Date(assignmentData.deadline) : new Date()
   );
@@ -47,6 +53,7 @@ const AssignmentSection = ({
       setTitle(assignmentData.title || '');
       setDescription(assignmentData.description || '');
       setCriteria(assignmentData.criteria || []);
+      setTotalPoints(assignmentData.totalPoints || 100);
       setDeadline(
         assignmentData.deadline ? new Date(assignmentData.deadline) : new Date()
       );
@@ -99,9 +106,14 @@ const AssignmentSection = ({
   };
 
   const addCriterion = () => {
-    if (newCriterion.trim()) {
-      setCriteria([...criteria, newCriterion.trim()]);
-      setNewCriterion('');
+    if (newCriterionName.trim()) {
+      const newCriteria = {
+        name: newCriterionName.trim(),
+        maxScore: parseInt(newCriterionMaxScore) || 10,
+      };
+      setCriteria([...criteria, newCriteria]);
+      setNewCriterionName('');
+      setNewCriterionMaxScore(10);
     }
   };
 
@@ -111,10 +123,25 @@ const AssignmentSection = ({
     setCriteria(updatedCriteria);
   };
 
+  // Calculate total max score from all criteria
+  const calculateTotalCriteriaScore = () => {
+    return criteria.reduce((total, criterion) => total + criterion.maxScore, 0);
+  };
+
   const handleSave = async () => {
     // Validation
+    if (!title.trim()) {
+      showAlert('Assignment title is required', alertTypes.ERROR);
+      return;
+    }
+
     if (!description.trim()) {
       showAlert('Assignment description is required', alertTypes.ERROR);
+      return;
+    }
+
+    if (criteria.length === 0) {
+      showAlert('At least one criterion is required', alertTypes.ERROR);
       return;
     }
 
@@ -123,17 +150,18 @@ const AssignmentSection = ({
     try {
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
       const assignmentPayload = {
+        title,
         description,
         criteria,
+        totalPoints,
         deadline,
-        title,
       };
 
       let updatedAssignment;
 
       // Update existing assignment or create new one
       if (assignmentData?._id) {
-        const response = await axios.put(
+        const response = await axiosInstance.put(
           `${BACKEND_URL}/assignments/${assignmentData._id}`,
           assignmentPayload
         );
@@ -158,10 +186,11 @@ const AssignmentSection = ({
         // Important: Include _id and use the full object structure expected by the parent
         const updatedAssignmentData = {
           _id: assignmentData._id,
+          title,
           description,
           criteria,
+          totalPoints,
           deadline,
-          title,
         };
 
         onAssignmentUpdate(updatedAssignmentData);
@@ -240,15 +269,39 @@ const AssignmentSection = ({
             </div>
 
             <div>
-              <Label>Submission Criteria</Label>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Total Assignment Points</Label>
+                <Input
+                  type="number"
+                  className="w-24 text-right"
+                  value={totalPoints}
+                  onChange={(e) => setTotalPoints(parseInt(e.target.value) || 100)}
+                  min="1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Grading Criteria</Label>
               <div className="flex space-x-2 mb-2">
                 <Input
                   type="text"
-                  placeholder="Add submission criterion"
-                  value={newCriterion}
-                  onChange={(e) => setNewCriterion(e.target.value)}
+                  placeholder="Criterion name"
+                  value={newCriterionName}
+                  onChange={(e) => setNewCriterionName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addCriterion()}
+                  className="flex-grow"
                 />
+                <div className="flex items-center w-40">
+                  <span className="mr-2">Max Score:</span>
+                  <Input
+                    type="number"
+                    value={newCriterionMaxScore}
+                    onChange={(e) => setNewCriterionMaxScore(parseInt(e.target.value) || 0)}
+                    min="1"
+                    className="w-20"
+                  />
+                </div>
                 <Button
                   variant="secondary"
                   size="icon"
@@ -264,7 +317,8 @@ const AssignmentSection = ({
                     key={index}
                     className="flex items-center justify-between bg-gray-100 p-2 rounded mb-1"
                   >
-                    <span>{criterion}</span>
+                    <span className="flex-grow">{criterion.name}</span>
+                    <span className="mx-4 text-gray-600">{criterion.maxScore} points</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -275,6 +329,19 @@ const AssignmentSection = ({
                   </div>
                 ))}
               </div>
+
+              {criteria.length > 0 && (
+                <div className="mt-2 text-right text-sm">
+                  Total criteria points: <span className={calculateTotalCriteriaScore() > totalPoints ? "text-red-500 font-semibold" : "text-green-600 font-semibold"}>
+                    {calculateTotalCriteriaScore()} / {totalPoints}
+                  </span>
+                  {calculateTotalCriteriaScore() > totalPoints && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Warning: Criteria total exceeds assignment total points
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -304,9 +371,10 @@ const AssignmentSection = ({
     );
   }
 
+  // View-only mode for teachers
   return (
     <>
-      { isTeacher ? (
+      {isTeacher ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -333,15 +401,33 @@ const AssignmentSection = ({
                   />
                 </div>
 
+                <div>
+                  <Label>Total Points</Label>
+                  <p className="bg-gray-50 p-3 rounded border">
+                    {totalPoints}
+                  </p>
+                </div>
+
                 {criteria.length > 0 && (
                   <div>
-                    <Label>Submission Criteria</Label>
+                    <Label>Grading Criteria</Label>
                     <div className="bg-gray-50 p-3 rounded border max-h-40 overflow-y-auto">
-                      <ul className="list-disc list-inside">
-                        {criteria.map((criterion, index) => (
-                          <li key={index}>{criterion}</li>
-                        ))}
-                      </ul>
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-left">Criterion</th>
+                            <th className="text-right">Points</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {criteria.map((criterion, index) => (
+                            <tr key={index}>
+                              <td className="text-left">{criterion.name}</td>
+                              <td className="text-right">{criterion.maxScore}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
@@ -355,10 +441,11 @@ const AssignmentSection = ({
               </div>
             )}
           </CardContent>
-        </Card>):
-        <StudentAssignmentView assignmentData={assignmentData}/>
-      }
-        </>
+        </Card>
+      ) : (
+        <StudentAssignmentView assignmentData={assignmentData} />
+      )}
+    </>
   );
 };
 

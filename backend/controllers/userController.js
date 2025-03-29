@@ -3,8 +3,6 @@ import dotenv from "dotenv";
 dotenv.config();
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { CourseModel } from "../models/courseModel.js";
-import { TestModel } from "../models/testModel.js";
 import { OAuth2Client } from 'google-auth-library';
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -240,69 +238,5 @@ export const authController = {
         message: 'Internal server error while updating user profile details'
       });
     }
-  }
-};
-
-export const personalizedroadmapController = async (req, res) => {
-  try {
-    const { course_id, student_id } = req.params;
-    const tests = await TestModel.find({
-      student: student_id,
-      course: course_id,
-    });
-
-    let marks = 0;
-    let total = 0;
-
-    for (let test of tests) {
-      marks += test.marks;
-      total += test.evaluation.length * 2;
-    }
-
-    const average = marks / total;
-    const modules = [];
-    const course = await CourseModel.findById(course_id);
-
-    for (let module of course.modules) {
-      modules.push(module.title);
-    }
-
-    // Call Flask API to get module suggestions
-    const response = await fetch(
-      `${process.env.FLASK_URL}/generate-module-suggestions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          modules,
-          performance: average,
-          student_id,
-          course_id,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch module suggestions");
-    }
-
-    const suggestions = await response.json();
-
-    return res.status(200).json({
-      success: true,
-      message: "Personalized roadmap generated successfully",
-      roadmap: {
-        performance: average,
-        suggestions: suggestions.suggestions,
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
   }
 };

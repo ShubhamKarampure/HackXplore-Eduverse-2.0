@@ -187,23 +187,24 @@ export const getAssignmentByModuleId = async (req, res) => {
   }
 };
 
-// Submit an assignment
+// Submit an assignment// Submit an assignment
 export const submitAssignment = async (req, res) => {
   try {
-    const studentId = req.userId;  
+    const studentId = req.userId;
+    
     const { submissionFile } = req.files;
     const { assignmentId } = req.body;
     
     // Find the assignment by ID
     const assignment = await AssignmentModel.findById(assignmentId);
-
+    
     if (!assignment) {
       return res.status(404).json({
         success: false,
         message: "Assignment not found"
       });
     }
-
+    
     // Check if the file is a PDF
     if (submissionFile.mimetype !== "application/pdf") {
       return res.status(400).json({
@@ -211,7 +212,7 @@ export const submitAssignment = async (req, res) => {
         message: "Only PDF format is accepted"
       });
     }
-
+    
     // Upload the submission file to the cloud
     const { public_id, url } = await uploadOnCloud(submissionFile.tempFilePath);
     
@@ -222,7 +223,7 @@ export const submitAssignment = async (req, res) => {
     
     const now = new Date();
     const isLate = now > assignment.deadline;
-
+    
     if (index === -1) {
       // New submission
       assignment.submissions.push({
@@ -230,7 +231,10 @@ export const submitAssignment = async (req, res) => {
         submission: url,
         public_id,
         submissionDate: now,
-        late: isLate
+        late: isLate,
+        grade: null,
+        criteriaScores: [],
+        feedback: ""
       });
     } else {
       // Update existing submission
@@ -245,26 +249,16 @@ export const submitAssignment = async (req, res) => {
         submission: url,
         public_id,
         submissionDate: now,
-        late: isLate
+        late: isLate,
+        grade: null, // Reset grade on resubmission
+        criteriaScores: [], // Reset criteria scores
+        feedback: "" // Reset feedback
       };
     }
-
+    
     // Save the updated assignment
     await assignment.save();
-
-    // Update student progress
-    const progress = await ProgressModel.findOne({
-      student: studentId,
-      course: assignment.module ? (await ModuleModel.findById(assignment.module)).course : null
-    });
     
-    if (progress) {
-      if (!progress.completedAssignments.includes(assignment._id)) {
-        progress.completedAssignments.push(assignment._id);
-        await progress.save();
-      }
-    }
-
     res.status(201).json({
       success: true,
       message: "Assignment submitted successfully",
@@ -302,10 +296,11 @@ export const getAssignmentsByCourseController = async (req, res) => {
   }
 };
 
-// Grade an assignment
+// Grade an assignment// Grade an assignment
 export const gradeAssignmentController = async (req, res) => {
   try {
-    const { assignmentId, studentId } = req.params;
+    const studentId = req.userId;
+    const { assignmentId } = req.params;
     
     const assignment = await AssignmentModel.findById(assignmentId);
     
@@ -316,24 +311,33 @@ export const gradeAssignmentController = async (req, res) => {
       });
     }
     
-    const submission = assignment.submissions.find(
+    // Find the student's submission
+    const submissionIndex = assignment.submissions.findIndex(
       (submission) => submission.student.toString() === studentId
     );
     
-    if (!submission) {
+    if (submissionIndex === -1) {
       return res.status(404).json({
         success: false,
         message: "Submission not found for this student"
       });
     }
     
+    const submission = assignment.submissions[submissionIndex];
     const pdf_url = submission.submission;
-    const criteria = assignment.criteria;
+    
+    // Convert criteria array of objects to array of strings for the AI service
+    const criteriaNames = assignment.criteria.map(criterion => criterion.name);
+    const criteriaMaxScores = assignment.criteria.map(criterion => criterion.maxScore);
     
     // Call the Flask AI grading service
     const response = await axios.post(
       `${process.env.FLASK_URL}/grade`,
-      { pdf_url, criteria },
+      { 
+        pdf_url, 
+        criteria: criteriaNames,
+        maxScores: criteriaMaxScores
+      },
       {
         headers: {
           "Content-type": "application/json"
@@ -344,14 +348,41 @@ export const gradeAssignmentController = async (req, res) => {
     
     const evaluation = response.data;
     
-    // Update submission with grade
-    submission.grade = evaluation.grade;
+    // Prepare criteria scores
+    const criteriaScores = [];
+    let totalScore = 0;
+    
+    for (let i = 0; i < criteriaNames.length; i++) {
+      const criterionName = criteriaNames[i];
+      const maxScore = criteriaMaxScores[i];
+      const score = evaluation[criterionName] ? 
+        Math.min(Math.max(parseInt(evaluation[criterionName]), 0), maxScore) : 0;
+      
+      criteriaScores.push({
+        criterion: criterionName,
+        score: score,
+        max_score: maxScore
+      });
+      
+      totalScore += score;
+    }
+    
+    // Update submission with grade and criteria scores
+    assignment.submissions[submissionIndex].grade = totalScore;
+    assignment.submissions[submissionIndex].criteriaScores = criteriaScores;
+    assignment.submissions[submissionIndex].feedback = evaluation.feedback || "";
+    
     await assignment.save();
     
     res.status(200).json({
       success: true,
       message: "Assignment evaluated successfully",
-      evaluation
+      evaluation: {
+        criteria_scores: criteriaScores,
+        grade: totalScore,
+        max_grade: assignment.totalPoints,
+        feedback: evaluation.feedback || ""
+      }
     });
   } catch (error) {
     console.log(error);
@@ -425,44 +456,59 @@ export const getAssignmentByStudent = async (req, res) => {
   }
 };
 
-// Generate assignment with AI
-export const generateAssignment = async (req, res) => {
+// Get submission status for a student
+export const getSubmissionStatus = async (req, res) => {
   try {
-    const { moduleId } = req.params;
-    const assignmentConfig = req.body;
+    const studentId = req.userId;
+    const { assignmentId } = req.params;
     
-    // Ensure module exists
-    const moduleExists = await ModuleModel.findById(moduleId);
-    if (!moduleExists) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Module not found" 
+    const assignment = await AssignmentModel.findById(assignmentId);
+    
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assignment not found"
       });
     }
     
-    // Call Flask API to generate assignment
-    const response = await axios.post(
-      `${process.env.FLASK_URL}/assignment`, 
-      { assignmentConfig }, 
-      {
-        headers: {
-          "Content-Type": "application/json"
-        },
-        withCredentials: true
-      }
+    // Find the student's submission
+    const submission = assignment.submissions.find(
+      (sub) => sub.student.toString() === studentId
     );
+    
+    if (!submission) {
+      return res.status(200).json({
+        success: true,
+        hasSubmitted: false,
+        isGraded: false
+      });
+    }
+    
+    // Determine if the submission is graded
+    const isGraded = submission.grade !== null && submission.grade !== undefined;
+    
+    // If graded, include evaluation data
+    let evaluation = null;
+    if (isGraded) {
+      evaluation = {
+        criteria_scores: submission.criteriaScores || [],
+        grade: submission.grade,
+        max_grade: assignment.totalPoints,
+        feedback: submission.feedback || ""
+      };
+    }
     
     res.status(200).json({
       success: true,
-      message: "AI generated assignment successfully",
-      assignment: response.data.assignment
+      hasSubmitted: true,
+      isGraded,
+      evaluation
     });
   } catch (error) {
-    console.error("Assignment generation error:", error);
-    res.status(500).json({
+    console.log(error);
+    return res.status(500).json({
       success: false,
-      message: "Internal server error",
-      error: error.message
+      message: "Internal Server Error"
     });
   }
 };

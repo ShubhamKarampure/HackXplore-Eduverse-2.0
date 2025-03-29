@@ -8,34 +8,34 @@ import {
   getAssignmentsByCourseController,
   gradeAssignmentController,
   getAssignmentByStudent,
-  generateAssignment
+  getSubmissionStatus
 } from "../controllers/assignmentControllers.js";
-
+import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Public routes
 // Retrieve an assignment by module ID
-router.get("/:moduleId", getAssignmentByModuleId);
-router.get("/course/:courseId", getAssignmentsByCourseController);
-router.get("/student/:id", getAssignmentByStudent);
-
-// Generate assignment with AI
-router.post("/generate", generateAssignment);
+router.get("/:moduleId",authMiddleware, getAssignmentByModuleId);
+router.get("/course/:courseId", authMiddleware,getAssignmentsByCourseController);
+router.get("/student/:id",authMiddleware, getAssignmentByStudent);
 
 // Teacher actions
 // Create a new assignment linked to a module
-router.post("/:moduleId", createAssignmentController);
+router.post("/:moduleId",authMiddleware, createAssignmentController);
 
 // Update an assignment
-router.put("/:id", updateAssignmentController);
+router.put("/:id", authMiddleware,updateAssignmentController);
 
 // Delete an assignment
-router.delete("/:id", deleteAssignmentController);
+router.delete("/:id",authMiddleware, deleteAssignmentController);
 
 // Student actions
-router.post("/submit/:id", submitAssignment);
+router.post("/student/submit",authMiddleware, submitAssignment);
 
 // Grading
-router.post("/grade/:assignmentId/:studentId", gradeAssignmentController);
+router.post("/grade/:assignmentId", authMiddleware,gradeAssignmentController);
+
+// Submission Statue
+router.get("/status/:assignmentId", authMiddleware,getSubmissionStatus);
 
 export const assignmentRouter = router;

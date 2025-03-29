@@ -245,20 +245,18 @@ Important: Return only valid JSON with exactly 8 modules.
             "attempted_response": message_content
         }), 500
 
-# GRADE API 
-@app.route('/grade', methods=['POST'])
+# GRADE API @app.route('/grade', methods=['POST'])
 def grade():
     data = request.get_json()
-
+    
     # Check if required fields are present
     if not data or 'pdf_url' not in data or 'criteria' not in data:
         return jsonify({"error": "Missing 'pdf_url' or 'criteria' in the request."}), 400
+    
     pdf_url = data['pdf_url']
-    print(pdf_url)
     criteria = data['criteria']
-
-    # Download the PDF from the given URL
-
+    max_scores = data.get('maxScores', [10] * len(criteria))  # Default to 10 if not provided
+    
     try:
         # Download the PDF content
         response = requests.get(pdf_url)
@@ -272,30 +270,38 @@ def grade():
         text = ""
         for page in reader.pages:
             text += page.extract_text() or ""  # Extract text from each page
-        text
+        
     except requests.exceptions.RequestException as e:
-        return f"Failed to download PDF: {str(e)}"
+        return jsonify({"error": f"Failed to download PDF: {str(e)}"}), 500
     except Exception as e:
-        return f"Failed to extract text from PDF: {str(e)}"
-
-    # Create a prompt with the criteria
-    criteria_list = ", ".join(criteria)
+        return jsonify({"error": f"Failed to extract text from PDF: {str(e)}"}), 500
+    
+    # Create a prompt with the criteria and max scores
+    criteria_with_scores = []
+    for i, criterion in enumerate(criteria):
+        criteria_with_scores.append(f"{criterion} (max score: {max_scores[i]})")
+    
+    criteria_list = ", ".join(criteria_with_scores)
+    
     prompt = f"""
     You are a grading assistant. Grade the assignment based on the following criteria: {criteria_list}.
-    Provide a grade between 1 and 10 for the overall quality of the PDF content, followed by one line descriptions for each criterion.
-
+    For each criterion, assign a score between 0 and its max score.
+    
+    Additionally, provide overall feedback about the submission.
+    
     Output the result in the following JSON format
     {{
-        "grade": (1-10),
-        "{criteria[0]}": "Description for criterion {criteria[0]}",
-        "{criteria[1]}": "Description for criterion {criteria[1]}",
-        "{criteria[2]}": "Description for criterion {criteria[2]}"
+        "grade": (sum of all scores),
+        "{criteria[0]}": (score for criterion 1),
+        "{criteria[1]}": (score for criterion 2),
+        "{criteria[2]}": (score for criterion 3),
+        "feedback": "Detailed feedback about the submission overall"
     }}
-
+    
     PDF text:
     {text}
     """
-
+    
     # Create a completion request to grade the assignment
     completion = client.chat.completions.create(
         model="llama-3.1-8b-instant",
@@ -312,20 +318,14 @@ def grade():
         response_format={"type": "json_object"},
         stop=None,
     )
-    message_content = completion.choices[0].message.content    
+    message_content = completion.choices[0].message.content
+    
     # If the content is in JSON format, parse it
     try:
         json_response = json.loads(message_content)  # Parse the string into a JSON object
         return jsonify(json_response)  # Return the JSON response
     except json.JSONDecodeError:
         return jsonify({"error": "Response is not valid JSON."}), 500
-
-def extract_text_from_pdf(file):
-    reader = PdfReader(file)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() or ""  # Handle potential None values
-    return text
 
 @app.route('/quiz', methods=['POST'])
 def quiz():
@@ -457,180 +457,6 @@ def quiz_feedback():
             return jsonify({"error": "Response is not valid JSON."}), 500
 
     return jsonify({"feedback": feedback_list})  # Return the list of feedback responses
-    
-@app.route('/assign-student-tags', methods=['POST'])
-def assign_tags():
-    data = request.get_json()
-
-    # Check if required fields are present
-    if not data or 'about' not in data:
-        return jsonify({"error": "Missing 'about' in the request."}), 400
-
-    about_text = data['about']
-
-    # Create a prompt to assign tags based on the student's "about" text
-    prompt = f"""
-    You are a tag assignment assistant. Analyze the following student description and assign the top 5 most relevant tags from the provided list.Use knn or decision tree algorithm if necessary. The tags should be relevant to the student's interests, skills, and goals. The tags returned should be diversified and cover a range of topics. If the student description is too vague look for keywords like creative, technology etc. and assign tags accordingly.
-
-    Student Description:
-    {about_text}
-
-    Available Tags:
-    Programming, Data Science, Machine Learning, Artificial Intelligence, Web Development, Mobile Development, Cloud Computing, Cybersecurity, Software Engineering, Database Management, DevOps, UI/UX Design, Game Development, Blockchain, Internet of Things (IoT), Big Data, Business Analytics, Project Management, Digital Marketing, Finance, Entrepreneurship, Leadership, Communication Skills, Creative Writing, Graphic Design, Photography, Music Production, Language Learning, Mathematics, Physics, Biology, Chemistry, History, Psychology, Philosophy.
-
-    Output the result in valid JSON format with double quotes around all keys and values. The JSON format should be an array of assigned tags, as follows:
-
-    {{
-        "interests": ["Tag1", "Tag2", "Tag3"]
-    }}
-
-    Only include tags that are highly relevant to the student's description.
-    """
-
-    # Create a completion request to assign tags
-    completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.5,  # Adjust temperature for creativity vs. precision
-        max_tokens=150,
-        top_p=1,
-        stream=False,
-        response_format={"type": "json_object"},
-        stop=None,
-    )
-    message_content = completion.choices[0].message.content
-
-    # If the content is in JSON format, parse it
-    try:
-        json_response = json.loads(message_content)  # Parse the string into a JSON object
-        return jsonify(json_response)  # Return the JSON response
-    except json.JSONDecodeError:
-        return jsonify({"error": "Response is not valid JSON."}), 500
-
-    
-@app.route('/courses/recommendations', methods=['POST'])
-def get_course_recommendations():
-    try:
-        data = request.get_json()
-        
-        # Check if required data is provided
-        if not data or 'userInterests' not in data or 'courses' not in data:
-            return jsonify({"success": False, "error": "User interests and courses are required"}), 400
-        
-        user_interests = data['userInterests']
-        courses = data['courses']
-        
-        if len(courses) == 0:
-            return jsonify({"success": True, "courses": []}), 200
-        
-        # Prepare data for the prompt
-        courses_data = []
-        for course in courses:
-            courses_data.append({
-                "id": course["_id"],
-                "title": course.get("title", ""),  # Adding title for better context
-                "tags": course["tags"],
-            })
-        
-        # Simplified prompt with clearer instructions
-        prompt = f"""
-        You are a course recommendation system. Match user interests with course tags to find relevant courses.
-        
-        User Interests: {json.dumps(user_interests)}
-        
-        Available Courses: {json.dumps(courses_data)}
-        
-        Return a JSON object with this exact format:
-        {{
-            "recommendedItems": [
-                "course_id_1", 
-                "course_id_2"
-            ]
-        }}
-        
-        Include only course IDs in the recommendedItems array, sorted by relevance.
-        """
-
-        # Create a completion request with fallback mechanism
-        try:
-            completion = client.chat.completions.create(
-                model="deepseek-r1-distill-llama-70b",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,  # Lower temperature for more deterministic output
-                max_tokens=500,
-                top_p=1,
-                stream=False,
-                response_format={"type": "json_object"},
-                stop=None
-            )
-            message_content = completion.choices[0].message.content
-
-            # Parse the response
-            groq_data = json.loads(message_content)
-        
-        except Exception as api_error:
-            # Fallback to manual recommendation if AI fails
-            print(f"AI recommendation failed: {str(api_error)}. Using fallback method.")
-            
-            # Simple fallback that matches interests to tags
-            recommended_courses = []
-            for course in courses:
-                # Calculate relevance score based on tag matches
-                score = 0
-                for interest in user_interests:
-                    if interest.lower() in [tag.lower() for tag in course["tags"]]:
-                        score += 1
-                
-                if score > 0:  # Only include courses with at least one matching tag
-                    recommended_courses.append((course["_id"], score))
-            
-            # Sort by relevance score (descending)
-            recommended_courses.sort(key=lambda x: x[1], reverse=True)
-            
-            # Create our own recommendation response
-            groq_data = {
-                "recommendedItems": [course_id for course_id, _ in recommended_courses]
-            }
-        
-        # Check if we have recommendations (either from AI or fallback)
-        if not groq_data or 'recommendedItems' not in groq_data:
-            return jsonify({
-                "success": False, 
-                "error": "Failed to generate recommendations"
-            }), 500
-        
-        # Get sorted object IDs from response
-        sorted_object_ids = groq_data["recommendedItems"]
-        
-        # Create a map for quick lookup of courses
-        course_map = {}
-        for course in courses:
-            course_map[course["_id"]] = course
-        
-        # Sort courses based on recommendation order
-        sorted_courses = [course_map[obj_id] for obj_id in sorted_object_ids if obj_id in course_map]
-        
-        # Add remaining courses that weren't in the recommendations
-        recommended_ids = set(sorted_object_ids)
-        remaining_courses = [course for course in courses if course["_id"] not in recommended_ids]
-        
-        # Combine sorted courses with remaining courses
-        all_sorted_courses = sorted_courses + remaining_courses
-        
-        return jsonify({"success": True, "courses": all_sorted_courses}), 200
-    
-    except Exception as e:
-        print(f"Error in course recommendation: {str(e)}")
-        return jsonify({
-            "success": False, 
-            "error": "Internal server error", 
-            "details": str(e)
-        }), 500
     
 @app.route('/generate-module-suggestions', methods=['POST'])
 def generate_module_suggestions():

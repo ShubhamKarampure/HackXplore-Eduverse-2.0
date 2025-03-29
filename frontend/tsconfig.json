@@ -34,7 +34,7 @@
     "**/*.jsx",
     ".next/types/**/*.ts",
     "src/**/*"
-, "postcss.config.cjs", "prettier.config.cjs", "../svg.d.ts"  ],
+, "postcss.config.cjs", "prettier.config.cjs", "../svg.d.ts", "node_modules/moduleApi.js"  ],
   "exclude": [
     "node_modules"
   ]

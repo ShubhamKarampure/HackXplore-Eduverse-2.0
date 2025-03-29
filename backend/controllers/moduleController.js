@@ -519,8 +519,9 @@ export const generateModules = async (req, res) => {
           moduleId: null, // Will be updated later
           description: '',
           deadline: null,
-          criteria: '',
-          title:'',
+          criteria: [],
+          title: '',
+          totalPoints:100,
         });
         await newAssignment.save();
         createdResources.assignments.push(newAssignment._id);
