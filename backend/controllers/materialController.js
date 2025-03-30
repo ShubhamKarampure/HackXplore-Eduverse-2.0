@@ -43,7 +43,6 @@ export const generateAndSavePPT = async (req, res) => {
         },
         withCredentials: true,
         responseType: "arraybuffer", // This is crucial for binary data
-        timeout: 30000, // Add a reasonable timeout (30 seconds)
         validateStatus: function (status) {
           return status < 500; // Resolve only if status code is less than 500
         }
@@ -85,21 +84,36 @@ export const generateAndSavePPT = async (req, res) => {
       if (stats.size > 0) {
         // Upload the PDF file to Cloudinary
         try {
-           const { public_id, url } = await uploadOnCloud(pdfFilePath);
+          const { public_id, url } = await uploadOnCloud(pdfFilePath);
     
-          
-          if (url ) {
-            // Save the material in the database
-            const studyMaterial = new StudyMaterialModel({
+          if (url) {
+            // Check if a study material exists for this teacher and course
+            let studyMaterial = await StudyMaterialModel.findOne({
               teacher_id,
-              course_id,
-              material_url: url ,
-              format: "pdf",
-              topic: topic
+              course_id
             });
             
-            await studyMaterial.save();
-            console.log("Study material saved in database");
+            if (studyMaterial) {
+              // Material exists, append new topic and URL
+              studyMaterial.material_material.push({
+                topic,
+                url
+              });
+              
+              await studyMaterial.save();
+              console.log("New material added to existing record");
+            } else {
+              // Create new study material
+              studyMaterial = new StudyMaterialModel({
+                teacher_id,
+                course_id,
+                material_material: [{ topic, url }],
+                format: "pdf",
+              });
+              
+              await studyMaterial.save();
+              console.log("New study material created");
+            }
             
             return res.status(201).json({
               success: true,
@@ -133,8 +147,9 @@ export const generateAndSavePPT = async (req, res) => {
 };
 
 export const getMaterialsByCourseTutor = async (req, res) => {
+  const teacher_id = req.userId;
   try {
-    const { course_id, teacher_id } = req.body;
+    const { course_id } = req.body;
 
     // Validate required parameters
     if (!course_id || !teacher_id) {

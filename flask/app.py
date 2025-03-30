@@ -131,60 +131,78 @@ def generate_materials():
         topic = data['topic']
         teacher_id = data['teacher_id']
         output_format = data.get('output_format', 'pptx')  # Default to PPTX
-        
-        # Mock material generation (replace with your logic)
+   
         materials = study_system.create_full_course_materials(topic, teacher_id)
 
-        # Generate markdown file
+        # Define upload directory name
+        upload_folder = "uploads"
+
+        # Create 'uploads' directory if it doesn't exist
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+
+        # Generate markdown file in uploads directory
         output_file = f"{topic.replace(' ', '_').lower()}_materials.md"
-        file_path = os.path.join(os.getcwd(), output_file)
-        
+        file_path = os.path.join(os.getcwd(), upload_folder, output_file)
+
         with open(file_path, "w", encoding="utf-8") as f:
             f.write('''---
-    marp: true
-    theme: default
-    paginate: true
-    \n''')
+        marp: true
+        theme: default
+        paginate: true
+        \n''')
             for subtopic, content in materials.items():
                 f.write('---\n')
                 f.write(f"### {subtopic}\n\n")
-                clean_content=clean_markdown_content(content)
+                clean_content = clean_markdown_content(content)
                 f.write(clean_content)
                 f.write("\n\n")
-        os.system(f" mmdc -i {file_path} -o {file_path} ")
-        # Generate PPTX if requested
+
+        # Generate the PDF, PPTX, or HTML files in 'uploads' directory
         if output_format in ['pptx', 'ppt']:
             pptx_file = f"{topic.replace(' ', '_').lower()}_slides.pptx"
-            pptx_path = os.path.join(os.getcwd(), pptx_file)
+            pptx_path = os.path.join(os.getcwd(), upload_folder, pptx_file)
             os.system(f"marp {file_path} --pptx -o {pptx_path}")
             print(f"PPTX file generated at: {pptx_path}")
             response = send_file(
                 pptx_path,
-                as_attachment=True
+                as_attachment=True,
+                download_name=pptx_file,
+                mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation"
             )
-            response.headers["Content-Disposition"] = f"attachment; filename={pptx_file}"
-            response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
             return response
 
         elif output_format == 'pdf':
-            pdf_file = f"{topic.replace(' ', '_').lower()}material.pdf"
-            pdf_path = os.path.join(os.getcwd(), pdf_file)
+            pdf_file = f"{topic.replace(' ', '_').lower()}_material.pdf"
+            pdf_path = os.path.join(os.getcwd(), upload_folder, pdf_file)
             os.system(f"marp {file_path} --pdf -o {pdf_path}")
             print(f"PDF file generated at: {pdf_path}")
-            return send_file(pdf_path, as_attachment=True, download_name=pdf_file)
+            response = send_file(
+                pdf_path,
+                as_attachment=True,
+                download_name=pdf_file,
+                mimetype="application/pdf"
+            )
+            return response
 
         elif output_format == 'html':
             html_file = f"{topic.replace(' ', '_').lower()}.html"
-            html_path = os.path.join(os.getcwd(), html_file)
+            html_path = os.path.join(os.getcwd(), upload_folder, html_file)
             os.system(f"marp {file_path} --html -o {html_path}")
             print(f"HTML file generated at: {html_path}")
-            return send_file(html_path, as_attachment=True, download_name=html_file)
+            response = send_file(
+                html_path,
+                as_attachment=True,
+                download_name=html_file,
+                mimetype="text/html"
+            )
+            return response
 
         else:
             # Return JSON if requested
             print("Returning materials as JSON.")
             return jsonify({"success": True, "materials": materials})
-        
+
     except Exception as e:
         print(f"Error occurred in generate_materials: {str(e)}")
         return jsonify({"error": str(e)}), 500

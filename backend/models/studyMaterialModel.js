@@ -12,10 +12,16 @@ const studyMaterialSchema = new mongoose.Schema(
       ref: "courses", 
       required: true,
     },
-    material_url: {
-      type: String,
-      required: true, 
-    },
+    material_material: [{
+      topic: {
+        type: String, 
+        required: true,
+      },
+      url: {
+        type: String,
+        required: true,
+      }
+    }],
     format: {
       type: String,
       enum: ["pdf", "ppt", "html"], 
