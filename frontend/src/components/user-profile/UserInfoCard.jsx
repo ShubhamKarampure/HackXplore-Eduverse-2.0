@@ -45,16 +45,24 @@ const userInfoCard = () => {
           {/* Profile Image */}
           <div className="absolute -top-16 left-10 border-4 border-white rounded-full shadow-md">
             {user.profile?.image?.url ? (
-              <img 
-                src={user.profile.image.url} 
-                alt="Profile" 
+              <img
+                src={user.profile.image.url}
+                alt="Profile"
                 className="w-32 h-32 rounded-full object-cover"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center">
-                <User size={48} className="text-gray-400" />
-              </div>
-            )}
+              user.image ? (
+               <img
+                src={user.image}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover"
+                onError={(e) => { e.target.onerror = null; e.target.src = '/fallback-image.png'; }}
+              />
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center">
+                  <User size={48} className="text-gray-400" />
+                </div>
+              ))}
           </div>
           
           {/* User Name & Role */}
