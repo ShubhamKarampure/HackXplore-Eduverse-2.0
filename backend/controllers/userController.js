@@ -4,7 +4,7 @@ dotenv.config();
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
-
+import { uploadOnCloud,deleteFromCloud } from "../utils/cloudinary.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
@@ -189,55 +189,76 @@ export const authController = {
   },
 
   async updateProfile(req, res) {
-    try {
-      const userId  = req.userId;
-      
-      const {
-        role,
-        dob,
-        interests,
-        about
-      } = req.body;
-
-      // Find the user and update profile details
-      const updatedUser = await UserModel.findByIdAndUpdate(
-        userId,
-        {
-          $set: {
-            role,
-            'profile.dob': dob,
-            'profile.interests': interests,
-            'profile.about': about
-          }
-        },
-        {
-          new: true,  // Return the updated document
-          runValidators: true  // Run model validations
-        }
-      );
-
-      if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      res.status(200).json({
-        role: updatedUser.role,
-        profile: updatedUser.profile
-      });
-
-    } catch (error) {
-      console.error('Error updating user profile details:', error);
+  try {
+    const userId = req.userId;
     
-      if (error) {
-        return res.status(400).json({
-          message: 'Validation error',
-          errors: error.errors
-        });
-      }
+    const {
+      role,
+      dob,
+      interests,
+      about
+    } = req.body;
+    
+    const updateData = {
+      role,
+      'profile.dob': dob,
+      'profile.interests': interests,
+      'profile.about': about
+    };
 
-      res.status(500).json({
-        message: 'Internal server error while updating user profile details'
+    let imageUploadResult = null;
+        if (req.files && req.files.profileImage) {
+          try {
+            imageUploadResult = await uploadOnCloud(
+              req.files.profileImage.tempFilePath,
+              "upload-images"
+            );
+          } catch (uploadError) {
+            return res.status(500).json({
+              success: false,
+              message: "Failed to upload profile image",
+              error: uploadError.message,
+            });
+          }
+    }
+    if (imageUploadResult) {
+      updateData['profile.image.url'] = imageUploadResult.url;
+      updateData['profile.image.public_id'] = imageUploadResult.public_id;
+    }
+
+    // Find the user and update profile details
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: updateData
+      },
+      {
+        new: true, // Return the updated document
+        runValidators: true // Run model validations
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      role: updatedUser.role,
+      profile: updatedUser.profile
+    });
+  } catch (error) {
+    console.error('Error updating user profile details:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: error.errors
       });
     }
+
+    res.status(500).json({
+      message: 'Internal server error while updating user profile details'
+    });
   }
+}
 };

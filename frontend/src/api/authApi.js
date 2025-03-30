@@ -83,32 +83,43 @@ export async function googleloginUser(credentials) {
   } 
 }
 
-export async function createUserProfile(profile) {
-  const onboarding = useUserStore.getState().completeOnboarding;
-  const update = useUserStore.getState().updateUser;
-  
-  try {
-    const response = await fetch(`${API_ROUTES.AUTH.CREATE_PROFILE}`, {
-  method: 'PUT',
-  headers: {
-    'Authorization': `Bearer ${useUserStore.getState().token}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify(profile),
-});
+export async function createUserProfile(formData) { // Accept formData as argument
+    const onboarding = useUserStore.getState().completeOnboarding;
+    const update = useUserStore.getState().updateUser;
+    const token = useUserStore.getState().token; // Get token
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Profile Creation failed');
+    if (!token) {
+        console.error("No auth token found for createUserProfile");
+        throw new Error("Authentication required."); // Or handle appropriately
     }
-    
-    const data = await response.json();
-   await update(data)
-    await onboarding();
-    return { success: true };
-  } catch (error) {
-    throw error;
-  }
+
+    try {
+        const response = await fetch(`${API_ROUTES.AUTH.CREATE_PROFILE}`, { // Use your actual endpoint
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+            body: formData, // Send the FormData object directly
+        });
+
+        const responseData = await response.json(); // Always try to parse JSON response
+
+        if (!response.ok) {
+            // Use the message from the backend response if available
+            throw new Error(responseData.message || `Profile Update failed (${response.status})`);
+        }
+
+        // Assuming backend returns the updated user data upon success
+        await update(responseData); // Update zustand store
+        await onboarding(); // Mark onboarding as complete
+        return { success: true, data: responseData }; // Return success and data
+
+    } catch (error) {
+        console.error('Error in createUserProfile API call:', error);
+        // Rethrow the error so the component's catch block can handle it
+        // Ensure it's an Error object for consistent handling
+        throw error instanceof Error ? error : new Error(error.message || 'An unknown error occurred during profile creation');
+    }
 }
 
 export async function logoutUser() {

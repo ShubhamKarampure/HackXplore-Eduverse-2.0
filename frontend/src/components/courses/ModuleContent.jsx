@@ -24,8 +24,8 @@ import QuizSection from "./content/QuizSection";
 import AssignmentSection from "./content/AssignmentSection";
 import { useAlert } from "@/context/AlertContext";
 import useUserStore from "@/store/userStore";
-import axios from "axios";
 import Loader from "../Loading";
+import axiosInstance from "@/lib/axiosInstance";
 
 const ModuleContent = ({ selectedModule, onModuleUpdate }) => {
     const { showAlert, alertTypes } = useAlert();
@@ -118,7 +118,7 @@ const handleSaveModule = async () => {
 
     // Send API request to update module
     console.log(selectedModule._id)
-    const response = await axios.put(
+    const response = await axiosInstance.put(
       `${BACKEND_URL}/modules/${selectedModule._id}`, 
       formData, 
       {

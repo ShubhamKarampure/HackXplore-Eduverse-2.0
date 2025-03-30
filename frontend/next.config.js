@@ -15,7 +15,7 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: ['lh3.googleusercontent.com'],
+    domains: ['res.cloudinary.com', 'lh3.googleusercontent.com'], // ✅ Allow Cloudinary & Google-hosted images
   },
 };
 
