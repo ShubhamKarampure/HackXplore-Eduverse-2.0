@@ -133,26 +133,8 @@ QDRANT_URL=your_qdrant_url
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### 6. Run the Complete Stack
 
-#### In separate terminals:
-
-```bash
-# Terminal 1 - Frontend
-cd frontend
-npm run dev
-
-# Terminal 2 - Backend
-cd backend
-npm run dev
-
-# Terminal 3 - GenAI Service
-cd flask
-# Activate virtual environment first, then:
-python app.py
-```
-
-### 7. Core Features
+### 6. Core Features
 
 #### LangChain-Powered RAG System
 
@@ -246,7 +228,7 @@ curl -X GET http://localhost:8000/api/github/stats \
   }'
 ```
 
-### 8. API Endpoints
+### 7. API Endpoints
 
 #### Node.js Backend (http://localhost:4000)
 
@@ -265,7 +247,7 @@ curl -X GET http://localhost:8000/api/github/stats \
 - `/api/search`: LangChain-powered semantic search across course materials
 - `/api/chat`: Interactive AI tutor using conversational agents
 
-### 9. LangChain Components
+### 8. LangChain Components
 
 EduVerse leverages the following LangChain components:
 
