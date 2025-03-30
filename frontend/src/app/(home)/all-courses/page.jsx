@@ -148,13 +148,15 @@ const CoursesPage = () => {
             </div>
           ) : filteredCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
+              {filteredCourses.map((course,index) => (
                 <Card
   className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg 
              transition-all duration-300 transform hover:-translate-y-2 
              border border-gray-300 dark:border-gray-700 
              overflow-hidden flex flex-col h-full"
-  onClick={() => handleCourseSelect(course)}
+  onClick={() => handleCourseSelect(course)
+  }
+  key={course._id || index}
 >
   <div className="relative h-48 overflow-hidden">
     <img 
