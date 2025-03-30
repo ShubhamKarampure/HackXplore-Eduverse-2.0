@@ -266,7 +266,7 @@ export const getAllCourses = async (req, res) => {
     const courses = await CourseModel.find({
       _id: { $nin: user.enrolledCourses },
     })
-      .populate("instructor", "firstName lastName") // Only populate instructor name
+      .populate("instructor", "firstName lastName profile.image") // Only populate instructor name
       .select("name instructor description semester image"); // Select only specific fields
 
     res.status(200).json({
@@ -302,7 +302,7 @@ export const getMyCourses = async (req, res) => {
       courses = await CourseModel.find({
         _id: { $in: user.enrolledCourses },
       })
-        .populate("instructor", "firstName lastName")
+        .populate("instructor", "firstName lastName profile.image")
         .select("name instructor description semester image");
     } else if (user.role === "Teacher") {
       // For teachers, fetch the courses they are teaching with specific fields

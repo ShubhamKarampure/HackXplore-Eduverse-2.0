@@ -157,12 +157,12 @@ def generate_materials():
                 clean_content = clean_markdown_content(content)
                 f.write(clean_content)
                 f.write("\n\n")
-
+        os.system(f" mmdc -i {file_path} -o {file_path} ")
         # Generate the PDF, PPTX, or HTML files in 'uploads' directory
         if output_format in ['pptx', 'ppt']:
             pptx_file = f"{topic.replace(' ', '_').lower()}_slides.pptx"
             pptx_path = os.path.join(os.getcwd(), upload_folder, pptx_file)
-            os.system(f"marp {file_path} --pptx -o {pptx_path}")
+            os.system(f"marp --allow-local-files {file_path} --pptx -o {pptx_path}")
             print(f"PPTX file generated at: {pptx_path}")
             response = send_file(
                 pptx_path,
@@ -173,9 +173,9 @@ def generate_materials():
             return response
 
         elif output_format == 'pdf':
-            pdf_file = f"{topic.replace(' ', '_').lower()}_material.pdf"
+            pdf_file = f"{topic.replace(' ', '_').lower()}_materials.pdf"
             pdf_path = os.path.join(os.getcwd(), upload_folder, pdf_file)
-            os.system(f"marp {file_path} --pdf -o {pdf_path}")
+            os.system(f"marp --allow-local-files {file_path} --pdf -o {pdf_path}")
             print(f"PDF file generated at: {pdf_path}")
             response = send_file(
                 pdf_path,
@@ -188,7 +188,7 @@ def generate_materials():
         elif output_format == 'html':
             html_file = f"{topic.replace(' ', '_').lower()}.html"
             html_path = os.path.join(os.getcwd(), upload_folder, html_file)
-            os.system(f"marp {file_path} --html -o {html_path}")
+            os.system(f"marp --allow-local-files {file_path} --pdf -o {html_path}")
             print(f"HTML file generated at: {html_path}")
             response = send_file(
                 html_path,
