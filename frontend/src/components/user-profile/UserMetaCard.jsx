@@ -23,8 +23,8 @@ export default function UserMetaCard() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
               <span className="mr-3 overflow-hidden rounded-full h-20 w-20 flex items-center justify-center bg-gray-300 text-white font-bold text-lg">
-              {(user?.profilePicture) ? (
-                         <Image width={80} height={80} src={user.profilePicture} alt="User" className="rounded-full" />
+              {(user?.image) ? (
+                         <Image width={80} height={80} src={user.image} alt="User" className="rounded-full" />
                        ) : (
                          <span>{user?.firstName.charAt(0).toUpperCase()}</span>
                 )}

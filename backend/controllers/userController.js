@@ -130,7 +130,7 @@ export const authController = {
         return res.redirect('/login?error=invalid_token');
       }
   
-      const { email, given_name, family_name, sub: googleId } = payload;
+      const { email, given_name, family_name, sub: googleId, picture } = payload;
 
       // Find or create user
       let user = await UserModel.findOne({
@@ -176,7 +176,8 @@ export const authController = {
           firstName: user.firstName,
           lastName: user.lastName,
           profile: user.profile,
-           role : user.role,
+          role: user.role,
+          image: picture, // Return user image from Google
         },
         onboardingRequired,
       });
