@@ -1,10 +1,8 @@
-"use client"
 import React from 'react';
 import { User, Mail, Calendar, BookOpen, Award } from 'lucide-react';
-import useUserStore from '@/store/userStore';
-import { userInfo } from 'os';
+import useUserStore from '../path/to/useUserStore';
 
-const userInfoCard = () => {
+const UserProfile = () => {
   const { user } = useUserStore();
 
   if (!user) {
@@ -135,4 +133,4 @@ const userInfoCard = () => {
   );
 };
 
-export default userInfoCard;
+export default UserProfile;
