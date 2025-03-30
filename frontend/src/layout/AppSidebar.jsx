@@ -250,7 +250,7 @@ const AppSidebar = () => {
               <Image className="dark:hidden" src="/images/logo/logo.svg" alt="Logo" width={180} height={40} />
               <Image
                 className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
+                src="/images/logo/auth-logo.svg"
                 alt="Logo"
                 width={180}
                 height={40}

@@ -143,7 +143,7 @@ const NavBar = ({ onSignIn, onSignUp }) => {
                 <Image className="dark:hidden" src="/images/logo/logo.svg" alt="Logo" width={180} height={40} />
                              <Image
                                className="hidden dark:block"
-                               src="/images/logo/logo-dark.svg"
+                               src="/images/logo/logo-auth.svg"
                                alt="Logo"
                                width={180}
                                height={40}
@@ -741,9 +741,8 @@ const LandingPage = () => {
         <div className="absolute inset-0 opacity-20">
           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             </svg>
-          <defs>
+          
             
-          </defs>
         </div>
 
         <div className="container mx-auto px-4 text-center relative z-10">
