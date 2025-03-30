@@ -23,6 +23,7 @@ const studentItems = [
   { icon: <FaFolderOpen size={20} />, name: "My Courses", path: "/my-courses" },
   { icon: <FaCalendarAlt size={20} />, name: "Calendar", path: "/calendar" },
   { icon: <FaUserCircle size={20} />, name: "User Profile", path: "/profile" },
+  { icon: <FaUserCircle size={20} />, name: "Projects", path: "/projects" },
 ]
 
 const teacherItems = [
@@ -30,6 +31,7 @@ const teacherItems = [
   { icon: <FaChalkboardTeacher size={20} />, name: "My Courses", path: "/my-courses" },
   { icon: <FaCalendarAlt size={20} />, name: "Calendar", path: "/calendar" },
   { icon: <FaUserCircle size={20} />, name: "User Profile", path: "/profile" },
+  { icon: <FaUserCircle size={20} />, name: "Projects", path: "/projects" }
 ]
 
 const AppSidebar = () => {
