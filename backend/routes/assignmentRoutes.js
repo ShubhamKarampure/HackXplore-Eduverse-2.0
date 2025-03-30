@@ -8,7 +8,8 @@ import {
   getAssignmentsByCourseController,
   gradeAssignmentController,
   getAssignmentByStudent,
-  getSubmissionStatus
+  getSubmissionStatus,
+  getDeadlines
 } from "../controllers/assignmentControllers.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -36,6 +37,8 @@ router.post("/student/submit",authMiddleware, submitAssignment);
 router.post("/grade/:assignmentId", authMiddleware,gradeAssignmentController);
 
 // Submission Statue
-router.get("/status/:assignmentId", authMiddleware,getSubmissionStatus);
+router.get("/status/:assignmentId", authMiddleware, getSubmissionStatus);
+
+router.get("/user/deadlines", authMiddleware, getDeadlines);
 
 export const assignmentRouter = router;
