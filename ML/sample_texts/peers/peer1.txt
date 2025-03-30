@@ -1,0 +1,14 @@
+**Machine Learning (ML)** is a branch of artificial intelligence (AI) that enables computers to learn from data and make predictions or decisions without being explicitly programmed. Instead of following strict rules, ML models identify patterns in data and improve their performance over time.
+
+### 🔹 **Types of Machine Learning**  
+1. **Supervised Learning** – The model learns from labeled data (e.g., predicting house prices based on past sales data).  
+2. **Unsupervised Learning** – The model finds hidden patterns in unlabeled data (e.g., customer segmentation).  
+3. **Reinforcement Learning** – The model learns by trial and error, receiving rewards for good actions (e.g., training a robot to walk).  
+
+### 🔹 **Common Applications**  
+✅ Image & Speech Recognition (e.g., Face ID, Google Assistant)  
+✅ Fraud Detection (e.g., Credit card fraud detection)  
+✅ Personalized Recommendations (e.g., Netflix, Spotify)  
+✅ Autonomous Vehicles (e.g., Self-driving cars)  
+
+Would you like to explore any specific ML topic in detail? 🚀
