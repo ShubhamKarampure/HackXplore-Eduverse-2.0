@@ -113,12 +113,11 @@ Formatting Guidelines:
 - Employ multi-level bullet points for detailed breakdowns
 - Format each slide to maximize information while maintaining readability
 - Use **bold** and *italics* to highlight critical terms and concepts
-- Include proper citations/attributions to [Teacher name/ID] and all reference materials
 - ADD reference at the end . Make sure the references are valid and do no use your own brain (which you ofcourse do not have)
+- ADD Atleast 1 MERMAID DIAGRAMS. Also make sure the diagram is small to fit and does not overflow
 
 DO NOT:
 - Add Marp metadata (I'll handle that separately)
-- ADD Atleast 1 MERMAID DIAGRAMS
 - Include image references
 - Write annotations like "Here is the slide content"
 - Sacrifice depth for brevity
