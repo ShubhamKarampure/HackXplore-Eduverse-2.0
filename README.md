@@ -2,6 +2,11 @@
 
 An intelligent education platform with comprehensive ERP capabilities, powered by RAG (Retrieval-Augmented Generation), LangChain, Marp, Mermaid CLI, and LLM integrations for automated quiz generation, personalized learning roadmaps, and AI-enhanced grading.
 
+## Video demo 
+
+https://www.youtube.com/watch?v=vr7aTSJolEk
+
+
 ## Tech Stack
 
 ### Frontend
