@@ -3,11 +3,15 @@ import {
   AnchoredThreads,
   FloatingComposer,
   FloatingThreads,
-} from "@liveblocks/react-tiptap";
-import { Editor } from "@tiptap/react";
+} from "@liveblocks/react-blocknote";
+import { BlockNoteEditor } from "@blocknote/core";
 
-export function Threads({ editor }: { editor: Editor | null }) {
+export function Threads({ editor }: { editor: BlockNoteEditor | null }) {
   const { threads } = useThreads({ query: { resolved: false } });
+
+  if (!editor) {
+    return null;
+  }
 
   return (
     <>

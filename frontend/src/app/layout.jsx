@@ -1,8 +1,13 @@
 import { Outfit } from "next/font/google";
-import "./globals.css";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AlertProvider } from '@/context/AlertContext';
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
+import "@liveblocks/react-ui/styles.css";
+import "@liveblocks/react-ui/styles/dark/media-query.css";
+import "@liveblocks/react-tiptap/styles.css";
+import "./globals.css";
 
 const outfit = Outfit({
   variable: "--font-outfit-sans",

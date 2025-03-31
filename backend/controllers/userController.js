@@ -9,6 +9,31 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 export const authController = {
+  async getCurrentUser(req, res) {
+  try {
+    const userId = req.userId; // Extracted from the token in middleware
+    // Find the user by ID
+    const user = await UserModel.findById(userId).select('-password'); // Exclude the password field
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profile: user.profile,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching current user info:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+},
   async signup(req, res) {
     try {
       const { email, firstName, lastName, password } = req.body;

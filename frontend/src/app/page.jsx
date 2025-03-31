@@ -471,7 +471,7 @@ const LandingPage = () => {
             <div className="relative rounded-xl overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-r from-brand-500/10 to-purple-500/10 mix-blend-overlay" />
               <Image
-                src="/placeholder.svg?height=600&width=1200"
+                src="https://res.cloudinary.com/dim3hi0jc/image/upload/v1743356678/Screenshot_2025-03-30_231308_diicvv.png"
                 width={1200}
                 height={600}
                 alt="EduVerse Platform"

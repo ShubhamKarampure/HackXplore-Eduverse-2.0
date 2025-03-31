@@ -145,3 +145,27 @@ export async function logoutUser() {
   }
 }
 
+
+
+
+export const getCurrentUser = async () => {
+
+  try {
+    const response = await fetch(`${API_ROUTES.AUTH.ME}`, {  
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${useUserStore.getState().token}`,
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.user; // Return the user object
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    throw error;
+  }
+};

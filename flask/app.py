@@ -296,19 +296,18 @@ def roadmap2():
 #             "error": "Response is not valid JSON.",
 #             "attempted_response": message_content
 #         }), 500
-
 @app.route('/grade', methods=['POST'])
 def grade():
     data = request.get_json()
-    print(data)
+    
     # Check if required fields are present
     if not data or 'pdf_url' not in data or 'criteria' not in data:
         return jsonify({"error": "Missing 'pdf_url' or 'criteria' in the request."}), 400
     
     pdf_url = data['pdf_url']
     criteria = data['criteria']
-    print(criteria)
     max_scores = data.get('maxScores', [10] * len(criteria))  # Default to 10 if not provided
+    
     try:
         # Download the PDF content
         response = requests.get(pdf_url)
@@ -328,6 +327,13 @@ def grade():
     except Exception as e:
         return jsonify({"error": f"Failed to extract text from PDF: {str(e)}"}), 500
     
+    # Clean criteria names to make them valid JSON keys
+    clean_criteria = []
+    for criterion in criteria:
+        # Remove special characters, replace spaces with underscores
+        clean_criterion = re.sub(r'[^\w\s]', '', criterion).strip().replace(' ', '_')
+        clean_criteria.append(clean_criterion)
+    
     # Create a prompt with the criteria and max scores
     criteria_with_scores = []
     for i, criterion in enumerate(criteria):
@@ -335,19 +341,20 @@ def grade():
     
     criteria_list = ", ".join(criteria_with_scores)
     
+    # Build the expected JSON structure for the prompt
+    json_format = '{\n    "grade": (sum of all scores),\n'
+    for i, clean_criterion in enumerate(clean_criteria):
+        json_format += f'    "{clean_criterion}": (score for criterion {i+1}),\n'
+    json_format += '    "feedback": "Detailed feedback about the submission overall"\n}'
+    
     prompt = f"""
     You are a grading assistant. Grade the assignment based on the following criteria: {criteria_list}.
     For each criterion, assign a score between 0 and its max score.
     
     Additionally, provide overall feedback about the submission.
     
-    Output the result in the following JSON format
-    {{
-        "grade": (sum of all scores),
-        "{criteria[0]}": (score for criterion 1),
-       
-        "feedback": "Detailed feedback about the submission overall"
-    }}
+    Output the result in the following JSON format:
+    {json_format}
     
     PDF text:
     {text}
@@ -374,9 +381,19 @@ def grade():
     # If the content is in JSON format, parse it
     try:
         json_response = json.loads(message_content)  # Parse the string into a JSON object
-        return jsonify(json_response)  # Return the JSON response
+        
+        # Map back to original criteria names if needed
+        result = {"grade": json_response["grade"], "feedback": json_response["feedback"]}
+        for i, criterion in enumerate(criteria):
+            clean_criterion = clean_criteria[i]
+            result[criterion] = json_response[clean_criterion]
+        
+        return jsonify(result)  # Return the JSON response
     except json.JSONDecodeError:
-        return jsonify({"error": "Response is not valid JSON."}), 500
+        return jsonify({
+            "error": "Response is not valid JSON.",
+            "raw_response": message_content
+        }), 500
 
 @app.route('/quiz', methods=['POST'])
 def quiz2():

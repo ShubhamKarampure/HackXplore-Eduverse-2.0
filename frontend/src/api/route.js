@@ -2,6 +2,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const API_ROUTES = {
     AUTH: {
+        ME:`${BACKEND_URL}/current-user`,
         REGISTER: `${BACKEND_URL}/signup`,
         LOGIN: `${BACKEND_URL}/login`,
         LOGOUT: `${BACKEND_URL}/api/auth/logout`,
