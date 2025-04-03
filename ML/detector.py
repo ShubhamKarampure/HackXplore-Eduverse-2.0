@@ -2,6 +2,9 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, GPT2
 import torch
 import numpy as np
 
+import warnings
+warnings.filterwarnings("ignore")
+
 # Load AI detection model
 ai_model_name = "roberta-base-openai-detector"
 ai_tokenizer = AutoTokenizer.from_pretrained(ai_model_name)
@@ -48,7 +51,19 @@ def calculate_burstiness(text):
 def detect_ai_content(text, threshold=0.7):
     """
     Combined detection using AI model, perplexity, and burstiness.
+    
+    Args:
+        text (str): The text to analyze
+        threshold (float): Threshold for classification (0.0-1.0)
+        
+    Returns:
+        dict: Complete analysis with individual scores and final percentage
     """
+
+    # Trim very long texts to avoid OOM errors
+    if len(text) > 10000:
+        text = text[:10000]
+    
     # --- AI Model Detection ---
     inputs = ai_tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
     with torch.no_grad():
@@ -63,14 +78,28 @@ def detect_ai_content(text, threshold=0.7):
     burstiness = calculate_burstiness(text)
 
     # Normalize scores
-    perplexity_score = max(0, min(100 - perplexity, 100))  # Higher perplexity → more human-like
-    burstiness_score = min(burstiness * 100, 100)          # Higher burstiness → more human-like
+    perplexity_score = max(0, min(1, 1 - (perplexity / 100)))  # Higher perplexity → more human-like
+    burstiness_score = min(burstiness, 1)                      # Higher burstiness → more human-like
 
-    # Weighted average of all scores
+    # Weighted average of all scores (0-1 scale)
     ai_percentage = (
-        (ai_score * 100 * 0.1) +       
+        (ai_score * 0.1) +       
         (perplexity_score * 0.4) +     
         (burstiness_score * 0.5)       
-    ) / 1
-
-    return round(ai_percentage, 2)
+    )
+    
+    # Determine confidence level
+    confidence = "high" if abs(ai_percentage - 0.5) > 0.3 else "medium" if abs(ai_percentage - 0.5) > 0.15 else "low"
+    
+    return {
+        "ai_percentage": round(ai_percentage * 100, 2),
+        "confidence": confidence,
+        "is_ai_generated": ai_percentage > threshold,
+        "details": {
+            "ai_model_score": round(ai_score * 100, 2),
+            "perplexity": round(perplexity, 2),
+            "perplexity_score": round(perplexity_score * 100, 2),
+            "burstiness": round(burstiness, 2),
+            "burstiness_score": round(burstiness_score * 100, 2)
+        }
+    }
