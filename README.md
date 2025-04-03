@@ -4,7 +4,7 @@ An intelligent education platform with comprehensive ERP capabilities, powered b
 
 ## Video demo 
 
-https://www.youtube.com/watch?v=vr7aTSJolEk
+[![Watch the video](https://img.youtube.com/vi/vr7aTSJolEk/maxresdefault.jpg)](https://www.youtube.com/watch?v=vr7aTSJolEk)
 
 
 ## Tech Stack
