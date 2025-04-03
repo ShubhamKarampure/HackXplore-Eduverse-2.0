@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@liveblocks/node": "^2.22.3",
     "@opentelemetry/auto-instrumentations-node": "^0.57.0",
     "@opentelemetry/instrumentation-mongodb": "^0.53.0",
     "@opentelemetry/sdk-node": "^0.200.0",

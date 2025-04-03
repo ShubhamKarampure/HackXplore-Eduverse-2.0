@@ -11,6 +11,8 @@ import { quizRouter } from './routes/quizRoutes.js'
 import projectRouter from './routes/projectRoutes.js'
 import fileUpload from 'express-fileupload'
 import { assignmentRouter } from './routes/assignmentRoutes.js'
+import { liveblocksRouter } from './routes/liveblocksRoutes.js'; // Adjust path if needed
+import { documentRouter } from './routes/documentRoutes.js'
 
 dotenv.config();
 
@@ -35,8 +37,10 @@ app.use('/api/v1/user', userRouter)
 app.use('/api/v1/user/course', CourseRouter)
 app.use('/api/v1/user/modules', ModuleRouter)
 app.use('/api/v1/user/quiz', quizRouter)
+app.use('/api/v1/liveblocks', liveblocksRouter);
 app.use('/api/v1/user/assignments', assignmentRouter)
 app.use('/api/v1/user/projects', projectRouter)
+app.use('/api/v1/user/documents', documentRouter);
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`.bgBlue.bold);

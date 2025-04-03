@@ -5,12 +5,12 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 // Public Routes
-router.get('/current-user',authMiddleware,authController.getCurrentUser)
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.post('/auth/google', authController.googleAuth);
 
 // Protected Route - Update Profile
 router.put('/create-profile', authMiddleware, authController.updateProfile);
+router.get('/share-list', authController.getShareableUsers);
 
 export const userRouter = router;
