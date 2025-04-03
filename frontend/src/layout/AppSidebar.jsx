@@ -11,6 +11,7 @@ import {
   FaCalendarAlt, // Calendar
   FaUserCircle, // User Profile
   FaFolderOpen, // My Courses (for students)
+  FaHome,
   FaChevronDown, // Chevron icon for dropdown
 } from "react-icons/fa"
 import { MdOutlineGridView } from "react-icons/md" // Alternative for dashboard
@@ -23,6 +24,9 @@ const studentItems = [
   { icon: <FaFolderOpen size={20} />, name: "My Courses", path: "/my-courses" },
   { icon: <FaCalendarAlt size={20} />, name: "Calendar", path: "/calendar" },
   { icon: <FaUserCircle size={20} />, name: "User Profile", path: "/profile" },
+  { icon: <FaUserCircle size={20} />, name: "Projects", path: "/projects" },
+  { icon: <  FaHome size={20} />, name: "Room", path: "/room" },
+
 ]
 
 const teacherItems = [
@@ -30,6 +34,8 @@ const teacherItems = [
   { icon: <FaChalkboardTeacher size={20} />, name: "My Courses", path: "/my-courses" },
   { icon: <FaCalendarAlt size={20} />, name: "Calendar", path: "/calendar" },
   { icon: <FaUserCircle size={20} />, name: "User Profile", path: "/profile" },
+  { icon: <FaUserCircle size={20} />, name: "Projects", path: "/projects" },
+    { icon: <FaHome size={20} />, name: "Room", path: "/room" }
 ]
 
 const AppSidebar = () => {

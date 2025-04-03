@@ -96,7 +96,7 @@ const QuizCreationPage = () => {
   };
 
   const handleSubmitQuiz = async () => {
-    if (questions.length === 0) {
+    if (questions?.length === 0) {
       showAlert("Please add at least one question", alertTypes.ERROR);
       return;
     }
@@ -218,7 +218,7 @@ const QuizCreationPage = () => {
                   </Button>
                 </div>
 
-                {questions.length === 0 && (
+                {questions?.length === 0 && (
                   <div className="flex flex-col items-center justify-center p-10 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
                     <p className="text-slate-500 dark:text-slate-400 mb-4">
                       No questions added yet

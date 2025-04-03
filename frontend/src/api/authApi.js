@@ -3,7 +3,6 @@ import API_ROUTES from './route';
 
 export async function registerUser(userData) {
   const login = useUserStore.getState().login;
-  
   try {  
     const response = await fetch(API_ROUTES.AUTH.REGISTER, {  // Using API_ROUTES
       method: 'POST',
@@ -145,3 +144,26 @@ export async function logoutUser() {
   }
 }
 
+export async function getShareableUsersApi() {
+    try {
+        const response = await fetch(API_ROUTES.USER.SHARE_LIST, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${useUserStore.getState().token}`,
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+             const error = new Error(data.message || `Could not fetch users (Status: ${response.status})`);
+             error.status = response.status;
+             throw error;
+        }
+
+        return data; // Returns array of user objects
+    } catch (error) {
+        console.error("API Error (getShareableUsersApi):", error);
+        throw error;
+    }
+}

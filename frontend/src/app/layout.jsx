@@ -1,8 +1,9 @@
 import { Outfit } from "next/font/google";
-import "./globals.css";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AlertProvider } from '@/context/AlertContext';
+
+import "./globals.css";
 
 const outfit = Outfit({
   variable: "--font-outfit-sans",

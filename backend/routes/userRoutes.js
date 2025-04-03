@@ -11,5 +11,6 @@ router.post('/auth/google', authController.googleAuth);
 
 // Protected Route - Update Profile
 router.put('/create-profile', authMiddleware, authController.updateProfile);
+router.get('/share-list', authController.getShareableUsers);
 
 export const userRouter = router;

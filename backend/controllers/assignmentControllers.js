@@ -512,3 +512,71 @@ export const getSubmissionStatus = async (req, res) => {
     });
   }
 };
+export const getDeadlines = async (req, res) => {
+  try {
+    const userId = req.userId;
+    
+    const courses = await CourseModel.find({
+      $or: [
+        { students: userId }, // If user is a student in the course
+        { teacher: userId }   // If user is a teacher of the course
+      ]
+    });
+    
+    if (!courses.length) {
+      return res.status(200).json({ assignments: [] });
+    }
+    
+    const courseIds = courses.map(course => course._id);
+    
+    // Find modules belonging to these courses
+    const modules = await ModuleModel.find({
+      course: { $in: courseIds }
+    });
+    
+    const moduleIds = modules.map(module => module._id);
+    
+    // Find assignments for these modules - INCLUDE submissions field
+    const assignments = await AssignmentModel.find({
+      module: { $in: moduleIds },
+      deadline: { $ne: null } // Exclude assignments with null deadlines
+    }).select('title deadline module submissions')
+    .populate({
+      path: 'module',
+      select: 'title course',
+      populate: {
+        path: 'course',
+        select: 'title'
+      }
+    });
+    
+    // Get submission status for student
+    const assignmentsWithStatus = assignments.map(assignment => {
+      // Now we have submissions included in the query results
+      const submission = assignment.submissions?.find(
+        sub => sub.student.toString() === userId.toString()
+      );
+      
+      return {
+        _id: assignment._id,
+        title: assignment.title,
+        deadline: assignment.deadline,
+        moduleName: assignment.module.title,
+        courseName: assignment.module.course.title,
+        submitted: submission ? true : false,
+        submissionDate: submission ? submission.submissionDate : null,
+        grade: submission ? submission.grade : null
+      };
+    });
+    
+    return res.status(200).json({
+      assignments: assignmentsWithStatus
+    });
+  } catch (error) {
+    console.error("Error fetching deadlines:", error);
+    return res.status(500).json({
+      message: "Failed to fetch deadlines and assignments",
+      error: error.message
+    });
+  }
+};

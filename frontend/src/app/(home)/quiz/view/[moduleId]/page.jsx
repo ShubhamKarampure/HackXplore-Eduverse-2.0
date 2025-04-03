@@ -124,7 +124,7 @@ const QuizViewPage = () => {
   }
 
   const calculateResults = () => {
-    const totalQuestions = quiz.questions.length
+    const totalQuestions = quiz.questions?.length
     const correctAnswers = quiz.questions.filter((q) => selectedAnswers[q._id] === q.answer[0]).length
 
     return {
@@ -141,7 +141,7 @@ const QuizViewPage = () => {
   }
 
   const navigateQuestion = (direction) => {
-    if (direction === "next" && currentQuestionIndex < quiz.questions.length - 1) {
+    if (direction === "next" && currentQuestionIndex < quiz.questions?.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1)
     } else if (direction === "prev" && currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1)
@@ -465,7 +465,7 @@ const QuizViewPage = () => {
               <h2 className="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100">Ready to Begin</h2>
 
               <p className="text-base mb-3 text-slate-600 dark:text-slate-300">
-                This quiz consists of {quiz.questions.length} questions. You have {formatTime(quiz.duration * 60)} to
+                This quiz consists of {quiz.questions?.length} questions. You have {formatTime(quiz.duration * 60)} to
                 complete it.
               </p>
 
@@ -507,7 +507,7 @@ const QuizViewPage = () => {
               {quiz.module.title} Quiz
             </CardTitle>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Question {currentQuestionIndex + 1} of {quiz.questions.length}
+              Question {currentQuestionIndex + 1} of {quiz.questions?.length}
             </p>
           </div>
           <div className="flex items-center px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
@@ -526,13 +526,13 @@ const QuizViewPage = () => {
               </div>
               <div className="text-right">
                 <span className="text-xs font-semibold inline-block text-blue-600 dark:text-blue-400">
-                  {Math.round(((currentQuestionIndex + 1) / quiz.questions.length) * 100)}%
+                  {Math.round(((currentQuestionIndex + 1) / quiz.questions?.length) * 100)}%
                 </span>
               </div>
             </div>
             <div className="overflow-hidden h-1.5 mb-0.5 text-xs flex rounded-full bg-slate-200 dark:bg-slate-700">
               <div
-                style={{ width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
+                style={{ width: `${((currentQuestionIndex + 1) / quiz.questions?.length) * 100}%` }}
                 className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-blue-500 to-indigo-600"
               ></div>
             </div>
@@ -565,7 +565,7 @@ const QuizViewPage = () => {
             <ArrowLeft className="mr-1 h-3 w-3" /> Previous
           </Button>
 
-          {currentQuestionIndex === quiz.questions.length - 1 ? (
+          {currentQuestionIndex === quiz.questions?.length - 1 ? (
             <Button
               variant="default"
               onClick={handleQuizSubmit}
