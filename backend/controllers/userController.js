@@ -3,37 +3,13 @@ import dotenv from "dotenv";
 dotenv.config();
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { OAuth2Client } from 'google-auth-library';
-import { uploadOnCloud,deleteFromCloud } from "../utils/cloudinary.js";
+import { OAuth2Client } from "google-auth-library";
+import { uploadOnCloud, deleteFromCloud } from "../utils/cloudinary.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+import mongoose from "mongoose"; // Ensure mongoose is imported
 
 export const authController = {
-  async getCurrentUser(req, res) {
-  try {
-    const userId = req.userId; // Extracted from the token in middleware
-    // Find the user by ID
-    const user = await UserModel.findById(userId).select('-password'); // Exclude the password field
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.status(200).json({
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profile: user.profile,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching current user info:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-},
   async signup(req, res) {
     try {
       const { email, firstName, lastName, password } = req.body;
@@ -41,7 +17,7 @@ export const authController = {
       // Check if user already exists
       const existingUser = await UserModel.findOne({ email });
       if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+        return res.status(400).json({ message: "User already exists" });
       }
 
       // Hash password
@@ -54,7 +30,7 @@ export const authController = {
         firstName,
         lastName,
         password: hashedPassword,
-        profile: {} // Initialize empty profile
+        profile: {}, // Initialize empty profile
       });
 
       await newUser.save();
@@ -63,7 +39,7 @@ export const authController = {
       const token = jwt.sign(
         { id: newUser._id, email: newUser.email },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: "7d" }
       );
 
       res.status(201).json({
@@ -78,9 +54,10 @@ export const authController = {
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Server error during signup' });
+      res.status(500).json({ message: "Server error during signup" });
     }
-  }, async login(req, res) {
+  },
+  async login(req, res) {
     try {
       const { email, password } = req.body;
 
@@ -110,11 +87,9 @@ export const authController = {
       const onboardingRequired = !isProfileComplete;
 
       // Generate JWT
-      const token = jwt.sign(
-        { id: user._id, email: user.email },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
+      const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
 
       res.json({
         token,
@@ -123,8 +98,8 @@ export const authController = {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-           profile: user.profile,
-          role : user.role,
+          profile: user.profile,
+          role: user.role,
         },
         onboardingRequired,
       });
@@ -133,13 +108,13 @@ export const authController = {
       res.status(500).json({ message: "Server error during login" });
     }
   },
-  
+
   async googleAuth(req, res) {
     try {
       const token = req.body.token;
-    
+
       if (!token) {
-        return res.redirect('/login?error=no_token');
+        return res.redirect("/login?error=no_token");
       }
 
       const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -147,19 +122,25 @@ export const authController = {
       // Verify Google token
       const ticket = await client.verifyIdToken({
         idToken: token,
-        audience: GOOGLE_CLIENT_ID
+        audience: GOOGLE_CLIENT_ID,
       });
-    
+
       const payload = ticket.getPayload();
       if (!payload) {
-        return res.redirect('/login?error=invalid_token');
+        return res.redirect("/login?error=invalid_token");
       }
-  
-      const { email, given_name, family_name, sub: googleId, picture } = payload;
+
+      const {
+        email,
+        given_name,
+        family_name,
+        sub: googleId,
+        picture,
+      } = payload;
 
       // Find or create user
       let user = await UserModel.findOne({
-        $or: [{ googleId }, { email }]
+        $or: [{ googleId }, { email }],
       });
 
       if (!user) {
@@ -168,7 +149,7 @@ export const authController = {
           firstName: given_name,
           lastName: family_name,
           googleId,
-          profile: {} // Empty profile
+          profile: {}, // Empty profile
         });
         await user.save();
       }
@@ -190,7 +171,7 @@ export const authController = {
       const jwtToken = jwt.sign(
         { id: user._id, email: user.email },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: "7d" }
       );
 
       res.json({
@@ -206,84 +187,97 @@ export const authController = {
         },
         onboardingRequired,
       });
-    
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Server error during Google login' });
+      res.status(500).json({ message: "Server error during Google login" });
+    }
+  },
+
+  async getShareableUsers(req, res) {
+    try {
+      const currentUserId = req.userId; // From authMiddleware
+
+      if (!currentUserId) {
+        return res.status(401).json({ message: "Authentication required." });
+      }
+
+      const users = await UserModel.find({
+        _id: { $ne: currentUserId }, // Exclude self from the list
+      }).select("_id email firstName lastName profile.image.url"); // Select only needed fields
+
+      res.status(200).json(users);
+    } catch (error) {
+      console.error("Error fetching shareable users:".red, error);
+      res.status(500).json({ message: "Server error during user fetch." });
     }
   },
 
   async updateProfile(req, res) {
-  try {
-    const userId = req.userId;
-    
-    const {
-      role,
-      dob,
-      interests,
-      about
-    } = req.body;
-    
-    const updateData = {
-      role,
-      'profile.dob': dob,
-      'profile.interests': interests,
-      'profile.about': about
-    };
+    try {
+      const userId = req.userId;
 
-    let imageUploadResult = null;
-        if (req.files && req.files.profileImage) {
-          try {
-            imageUploadResult = await uploadOnCloud(
-              req.files.profileImage.tempFilePath,
-              "upload-images"
-            );
-          } catch (uploadError) {
-            return res.status(500).json({
-              success: false,
-              message: "Failed to upload profile image",
-              error: uploadError.message,
-            });
-          }
-    }
-    if (imageUploadResult) {
-      updateData['profile.image.url'] = imageUploadResult.url;
-      updateData['profile.image.public_id'] = imageUploadResult.public_id;
-    }
+      const { role, dob, interests, about } = req.body;
 
-    // Find the user and update profile details
-    const updatedUser = await UserModel.findByIdAndUpdate(
-      userId,
-      {
-        $set: updateData
-      },
-      {
-        new: true, // Return the updated document
-        runValidators: true // Run model validations
+      const updateData = {
+        role,
+        "profile.dob": dob,
+        "profile.interests": interests,
+        "profile.about": about,
+      };
+
+      let imageUploadResult = null;
+      if (req.files && req.files.profileImage) {
+        try {
+          imageUploadResult = await uploadOnCloud(
+            req.files.profileImage.tempFilePath,
+            "upload-images"
+          );
+        } catch (uploadError) {
+          return res.status(500).json({
+            success: false,
+            message: "Failed to upload profile image",
+            error: uploadError.message,
+          });
+        }
       }
-    );
+      if (imageUploadResult) {
+        updateData["profile.image.url"] = imageUploadResult.url;
+        updateData["profile.image.public_id"] = imageUploadResult.public_id;
+      }
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+      // Find the user and update profile details
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        {
+          $set: updateData,
+        },
+        {
+          new: true, // Return the updated document
+          runValidators: true, // Run model validations
+        }
+      );
 
-    res.status(200).json({
-      role: updatedUser.role,
-      profile: updatedUser.profile
-    });
-  } catch (error) {
-    console.error('Error updating user profile details:', error);
-    
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        message: 'Validation error',
-        errors: error.errors
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.status(200).json({
+        role: updatedUser.role,
+        profile: updatedUser.profile,
+      });
+    } catch (error) {
+      console.error("Error updating user profile details:", error);
+
+      if (error.name === "ValidationError") {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors,
+        });
+      }
+
+      res.status(500).json({
+        message: "Internal server error while updating user profile details",
       });
     }
-
-    res.status(500).json({
-      message: 'Internal server error while updating user profile details'
-    });
-  }
-}
+  },
 };
