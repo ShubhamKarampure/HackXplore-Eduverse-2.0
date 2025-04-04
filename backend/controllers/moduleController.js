@@ -236,6 +236,7 @@ export const updateModule = async (req, res) => {
       description, 
       order,
       videoTitle,
+      youtube_video_url
     } = req.body;
    // Find existing module and verify ownership
     const existingModule = await ModuleModel.findById(moduleId)
@@ -253,6 +254,9 @@ export const updateModule = async (req, res) => {
     if (title) updateData.title = title;
     if (description) updateData.description = description;
     if (order !== undefined) updateData.order = order;
+    if (youtube_video_url) {
+      updateData['contents.video.youtube_video_url'] = youtube_video_url;
+    }
 
     // Handle video upload
     let videoUploadResult = null;
@@ -287,6 +291,7 @@ export const updateModule = async (req, res) => {
     // Handle resource upload
     let resourceUploadResult = null;
     if (req.files && req.files.resource) {
+      console.log('Here')
       try {
         // Delete existing resource if exists
         if (existingModule.contents.resource && existingModule.contents.resource.url) {
