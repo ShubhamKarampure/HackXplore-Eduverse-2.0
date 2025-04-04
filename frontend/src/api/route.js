@@ -35,9 +35,8 @@ const API_ROUTES = {
     DOCUMENT: {
         CREATE: `${BACKEND_URL}/documents`,
         MY: `${BACKEND_URL}/documents`,
-        ADD_COLLABORATOR: (documentId) => `${BACKEND_URL}/documents/${documentId}/collaborators`,
+        ADD_COLLABORATOR: `${BACKEND_URL}/documents/share`,
     },
-
     USER: {
         SHARE_LIST: `${BACKEND_URL}/share-list`,
      }

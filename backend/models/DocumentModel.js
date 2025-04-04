@@ -27,10 +27,18 @@ const DocumentSchema = new mongoose.Schema(
             default: [],
             index: true, // Index for faster lookup of documents a user collaborates on
         },
+
+        // Type of the document: either 'text' or 'code'
+        type: {
+            type: String,
+            enum: ['text', 'code'],
+            required: true,
+            default: 'text', // Default to 'text'
+        },
     },
     {
         timestamps: true, // Adds createdAt and updatedAt fields
     }
 );
 
-export const DocumentModel = mongoose.model('Document', DocumentSchema); 
+export const DocumentModel = mongoose.model('Document', DocumentSchema);

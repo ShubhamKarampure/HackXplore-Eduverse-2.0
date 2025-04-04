@@ -14,7 +14,7 @@ router.post('/', documentController.createDocument);
 router.get('/', documentController.getMyDocuments);
 
 // POST /api/v1/documents/:id/collaborators - Add a user to a document's collaborators
-router.post('/:id/collaborators', documentController.shareDocument);
+router.post('/share', documentController.shareDocument);
 
 
 export const documentRouter = router; // Use default export if preferred

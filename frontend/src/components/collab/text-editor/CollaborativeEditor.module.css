@@ -1,0 +1,122 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  height: 100%;
+  max-height: 100vh;
+}
+
+.documentHeader {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+}
+
+.documentTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.documentTitle h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f3f4f6;
+}
+
+.editorContainer {
+  flex: 1;
+  overflow-y: auto;
+  background-color: white;
+  min-height: 400px; /* Minimum height */
+}
+
+.editor {
+  height: 100%;
+  padding: 1rem;
+  outline: none;
+}
+
+.editor p {
+  margin: 0.5em 0;
+}
+
+.editor h1 {
+  font-size: 1.75rem;
+  margin: 1em 0 0.5em;
+}
+
+.editor h2 {
+  font-size: 1.5rem;
+  margin: 1em 0 0.5em;
+}
+
+.codeBlock {
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  font-family: monospace;
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+/* Table styles */
+.editor table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1em 0;
+  overflow: hidden;
+}
+
+.editor td,
+.editor th {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  position: relative;
+  vertical-align: top;
+}
+
+.editor th {
+  font-weight: bold;
+  background-color: #f3f4f6;
+}
+
+/* Image styles */
+.editor img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em 0;
+}
+
+/* Link styles */
+.editor a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Highlight styles */
+.editor mark {
+  background-color: #fef3c7;
+  padding: 0.125em 0;
+}
+
+/* Force editor to take available space and allow scrolling */
+.ProseMirror {
+  min-height: 100%;
+}

@@ -5,9 +5,6 @@ import { authMiddleware } from '../middleware/authMiddleware.js'; // Import your
 
 const router = express.Router();
 
-// Define the POST route for Liveblocks authentication
-// It first runs your standard authMiddleware to get req.userId,
-// then runs the liveblocksController.authorize function.
 router.post('/auth', authMiddleware, liveblocksController.authorize);
 
 // Export the router using ES Module syntax

@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap')
 layer(base);
 /*
@@ -6,13 +7,6 @@ layer(base);
 @plugin 'tailwindcss-animate';
 
 @import 'tailwindcss';
-
-@import "@liveblocks/react-ui/styles/dark/media-query.css";
-@import "@liveblocks/react-tiptap/styles.css"; 
-@import "@liveblocks/react-ui/styles.css";
-@import "@liveblocks/react-ui/styles/dark/media-query.css";
-
-@import "@liveblocks/react-tiptap/styles.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -795,4 +789,73 @@ html {
   .anchored-threads {
     display: none;
   }
+}
+
+
+
+/* Cursor selection background */
+.yRemoteSelection {
+  opacity: 0.5;
+  background-color: var(--user-color);
+  margin-right: -1px;
+}
+
+/* Cursor caret */
+.yRemoteSelectionHead {
+  position: absolute;
+  box-sizing: border-box;
+  height: 100%;
+  border-left: 2px solid var(--user-color);
+}
+
+/* Cursor name */
+.yRemoteSelectionHead::after {
+  position: absolute;
+  top: -1.4em;
+  left: -2px;
+  padding: 2px 6px;
+  background: var(--user-color);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  border-bottom-left-radius: 0;
+  line-height: normal;
+  white-space: nowrap;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1000;
+}
+
+
+/* Give a remote user a caret */
+.collaboration-cursor__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+/* Render the username above the caret */
+.collaboration-cursor__label {
+  font-style: normal;
+  font-weight: 600;
+  left: -1px;
+  line-height: normal;
+  position: absolute;
+  user-select: none;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #fff;
+  top: -1.4em;
+  border-radius: 6px;
+  border-bottom-left-radius: 0;
+  padding: 2px 6px;
+  pointer-events: none;
 }

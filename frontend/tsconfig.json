@@ -34,7 +34,7 @@
     "**/*.jsx",
     ".next/types/**/*.ts",
     "src/**/*"
-, "postcss.config.cjs", "prettier.config.cjs", "svg.d.ts", "node_modules/moduleApi.js", "next.config.js"  ],
+, "postcss.config.cjs", "prettier.config.cjs", "svg.d.ts", "node_modules/moduleApi.js", "next.config.js", "src/icons/Highlight.tsx", "src/icons/Image.tsx", "src/icons/index.ts", "src/icons/index.tsx", "src/icons/Italic.tsx", "src/icons/Link.tsx", "src/icons/ListOrdered.tsx", "src/icons/ListUnordered.tsx", "src/icons/Moon.tsx", "src/icons/Redo.tsx", "src/icons/Select.tsx", "src/icons/Strikethrough.tsx", "src/icons/Sun.tsx", "src/icons/Undo.tsx", "src/icons/YouTube.tsx", "src/icons/Code.tsx", "src/icons/CodeBlock.tsx", "src/icons/Comment.tsx", "src/icons/Cross.tsx", "src/icons/Check.tsx", "src/icons/Checkbox.tsx", "src/icons/AlignCenter.tsx", "src/icons/AlignJustify.tsx", "src/icons/AlignLeft.tsx", "src/icons/AlignRight.tsx", "src/icons/Bold.tsx"  ],
   "exclude": [
     "node_modules"
   ]

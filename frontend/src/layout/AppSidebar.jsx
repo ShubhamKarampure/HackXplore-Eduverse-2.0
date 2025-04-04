@@ -25,8 +25,7 @@ const studentItems = [
   { icon: <FaCalendarAlt size={20} />, name: "Calendar", path: "/calendar" },
   { icon: <FaUserCircle size={20} />, name: "User Profile", path: "/profile" },
   { icon: <FaUserCircle size={20} />, name: "Projects", path: "/projects" },
-  { icon: <  FaHome size={20} />, name: "Room", path: "/room" },
-
+  { icon:  <FaHome size={20} />, name: "Room", path: "/room" },
 ]
 
 const teacherItems = [

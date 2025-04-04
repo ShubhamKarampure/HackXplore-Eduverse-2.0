@@ -202,8 +202,8 @@ export const authController = {
       }
 
       const users = await UserModel.find({
-        _id: { $ne: currentUserId }, // Exclude self from the list
-      }).select("_id email firstName lastName profile.image.url"); // Select only needed fields
+        _id: { $ne: currentUserId }, 
+      }).select("_id email firstName lastName profile.image.url"); 
 
       res.status(200).json(users);
     } catch (error) {

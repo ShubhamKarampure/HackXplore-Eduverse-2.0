@@ -1,15 +1,15 @@
-// components/ShareFeature.js
-import React, { useState, useCallback } from 'react';
+// components/collab/ShareFeature.js
+import React, { useState, useCallback, useEffect } from 'react';
+import { X, Check, Loader2 } from 'lucide-react';
 import { getShareableUsersApi } from '@/api/authApi';
-import { addCollaboratorApi } from '@/api/documentApi'; // Adjust path
+import { addCollaboratorApi } from '@/api/documentApi';
 
-export default function ShareFeature({ documentId }) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+export default function ShareFeature({ documentId, onClose }) {
     const [users, setUsers] = useState([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
     const [error, setError] = useState(null);
-    const [addStatus, setAddStatus] = useState({}); // { userId: { status: '...', message: '...' } }
-
+    const [addStatus, setAddStatus] = useState({});
+    
     const fetchUsers = useCallback(async () => {
         setIsLoadingUsers(true);
         setError(null);
@@ -25,57 +25,141 @@ export default function ShareFeature({ documentId }) {
         }
     }, []);
 
-    const openModal = () => { setIsModalOpen(true); fetchUsers(); };
-    const closeModal = () => { setIsModalOpen(false); /* Reset states if needed */ };
+    // Fetch users when component mounts
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
 
     const handleAddCollaborator = async (userIdToAdd) => {
-         setAddStatus(prev => ({ ...prev, [userIdToAdd]: { status: 'adding' } }));
-         setError(null);
-         try {
-             const result = await addCollaboratorApi(documentId, userIdToAdd);
-             setAddStatus(prev => ({ ...prev, [userIdToAdd]: { status: 'added', message: result.message } }));
-         } catch (err) {
-             setAddStatus(prev => ({ ...prev, [userIdToAdd]: { status: 'error', message: err.message || 'Failed' } }));
-         }
-     };
+        setAddStatus(prev => ({ ...prev, [userIdToAdd]: { status: 'adding' } }));
+        setError(null);
+        try {
+            const result = await addCollaboratorApi(documentId, userIdToAdd);
+            setAddStatus(prev => ({ ...prev, [userIdToAdd]: { status: 'added', message: result.message || 'Added successfully' } }));
+        } catch (err) {
+            setAddStatus(prev => ({ ...prev, [userIdToAdd]: { status: 'error', message: err.message || 'Failed to add' } }));
+        }
+    };
 
-    // Basic Modal / Button JSX structure (add proper styling)
+    // Close on escape key
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') onClose?.();
+        };
+        
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
+
+    // Close on backdrop click
+    const handleBackdropClick = (e) => {
+        if (e.target === e.currentTarget) onClose?.();
+    };
+
     return (
-        <div>
-            <button onClick={openModal} title="Share this document">Share</button>
-            {isModalOpen && (
-                <div className="modal-backdrop" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', display:'flex', justifyContent:'center', alignItems:'center', zIndex: 1000 }}>
-                    <div className="modal-content" style={{ background: 'white', padding: '20px', borderRadius: '5px', minWidth: '350px', maxWidth: '500px' }}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                             <h2>Share Document</h2>
-                             <button onClick={closeModal}>&times;</button>
-                        </div>
-                        {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-                        {isLoadingUsers ? ( <p>Loading users...</p> )
-                         : users.length === 0 ? ( <p>No other users found.</p> )
-                         : (
-                            <ul style={{ listStyle: 'none', padding: 0, maxHeight: '300px', overflowY: 'auto', margin:'10px 0' }}>
-                                {users.map(user => {
-                                    const currentStatus = addStatus[user._id] || {};
-                                    const isDisabled = currentStatus.status === 'adding' || currentStatus.status === 'added';
-                                    return (
-                                        <li key={user._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                                            <span>
-                                                <img src={user.profile?.image?.url || `https://liveblocks.io/avatars/avatar-${Math.floor(Math.random() * 30)}.png`} alt={user.firstName} style={{width: 24, height: 24, borderRadius:'50%', marginRight: 8, verticalAlign: 'middle'}} />
-                                                {user.firstName} {user.lastName}
-                                                 {currentStatus.message && (<em style={{ marginLeft: 10, fontSize:'0.8em', color: currentStatus.status === 'error' ? 'red' : 'green' }}>({currentStatus.message})</em>)}
-                                            </span>
-                                            <button onClick={() => handleAddCollaborator(user._id)} disabled={isDisabled} style={{padding: '3px 8px'}}>
-                                                {currentStatus.status === 'adding' ? 'Adding...' : currentStatus.status === 'added' ? 'Added' : 'Add'}
-                                            </button>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        )}
-                    </div>
+        <div 
+            className="fixed inset-0 bg-black/50 flex justify-center items-center z-100 p-4"
+            onClick={handleBackdropClick}
+        >
+            <div className="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">Share Document</h2>
+                    <button 
+                        onClick={onClose} 
+                        className="p-1 hover:bg-gray-100 rounded-full"
+                        aria-label="Close"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
-            )}
+                
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+                        {error}
+                    </div>
+                )}
+                
+                <div className="mb-4">
+                    <p className="text-gray-600 text-sm">Select users to share this document with:</p>
+                </div>
+                
+                <div className="max-h-80 overflow-y-auto">
+                    {isLoadingUsers ? (
+                        <div className="flex justify-center items-center py-8">
+                            <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                            No users available to share with.
+                        </div>
+                    ) : (
+                        <ul className="divide-y divide-gray-100">
+                            {users.map(user => {
+                                const currentStatus = addStatus[user._id] || {};
+                                const isDisabled = currentStatus.status === 'adding' || currentStatus.status === 'added';
+                                
+                                return (
+                                    <li key={user._id} className="py-3 flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0 h-10 w-10">
+                                                <img 
+                                                    className="h-10 w-10 rounded-full" 
+                                                    src={user.profile?.image?.url || `https://liveblocks.io/avatars/avatar-${Math.floor(Math.random() * 30)}.png`}
+                                                    alt={`${user.firstName} ${user.lastName}`}
+                                                />
+                                            </div>
+                                            <div className="ml-3">
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    {user.firstName} {user.lastName}
+                                                </p>
+                                                {currentStatus.message && (
+                                                    <p className={`text-xs ${currentStatus.status === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                                                        {currentStatus.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleAddCollaborator(user._id)}
+                                            disabled={isDisabled}
+                                            className={`px-3 py-1.5 text-sm rounded-md ${
+                                                currentStatus.status === 'added'
+                                                    ? 'bg-green-50 text-green-700 border border-green-200'
+                                                    : currentStatus.status === 'error'
+                                                    ? 'bg-red-50 text-red-700 border border-red-200'
+                                                    : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
+                                            } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                        >
+                                            {currentStatus.status === 'adding' ? (
+                                                <span className="flex items-center">
+                                                    <Loader2 className="animate-spin h-3 w-3 mr-1" />
+                                                    Adding...
+                                                </span>
+                                            ) : currentStatus.status === 'added' ? (
+                                                <span className="flex items-center">
+                                                    <Check className="h-3 w-3 mr-1" />
+                                                    Added
+                                                </span>
+                                            ) : (
+                                                'Add'
+                                            )}
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md text-sm font-medium"
+                    >
+                        Done
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
