@@ -293,7 +293,6 @@ export const updateModule = async (req, res) => {
     // Handle resource upload
     let resourceUploadResult = null;
     if (req.files && req.files.resource) {
-      console.log('Here')
       try {
         // Delete existing resource if exists
         if (existingModule.contents.resource && existingModule.contents.resource.url) {

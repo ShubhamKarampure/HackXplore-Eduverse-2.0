@@ -8,14 +8,19 @@ import re
 import json
 from dotenv import load_dotenv  
 from RAG.LangChainModel import StudyMaterialRAG
-from yt_videos.test import send_youtube_url_to_api 
+from yt_videos.test import send_youtube_url_to_api
+from langchain.prompts import PromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq  # Import LangChain's Groq integration
+from langchain.schema import HumanMessage
+
 # Load environment variables from .env
 load_dotenv()
 
 app = Flask(__name__)
 
 groq_api_key = os.getenv("GROQ_API_KEY")
-
+gemini_api_key = os.getenv("GEMINI_API_KEY")
 # Initialize the StudyMaterialRAG system
 study_system = StudyMaterialRAG()
 
@@ -23,8 +28,16 @@ study_system = StudyMaterialRAG()
 if not groq_api_key:
     raise ValueError("GROQ_API_KEY is not set in the .env file")
 
-# Initialize Groq client with API key
+# Initialize the Groq client for direct API calls
 client = Groq(api_key=groq_api_key)
+
+# Create an LLM using LangChain with Groq
+llm = ChatGroq(
+    temperature=0,
+    groq_api_key=groq_api_key,
+    model_name="llama-3.1-8b-instant",
+)
+        
 
 @app.route('/module/youtube_video_add',methods=['POST'])
 def add_yt_video():
@@ -36,6 +49,121 @@ def add_yt_video():
 
     return send_youtube_url_to_api(search_query, module_id)
         
+
+@app.route('/personalised_roadmap', methods=['POST'])
+def personalised_roadmap():
+    student_id = request.json.get('studentId')
+    course_id = request.json.get('courseId')
+
+    # Check if required fields are present
+    if not student_id or not course_id:
+        return jsonify({"error": "studentId and courseId are required"}), 400
+
+    url = os.getenv('NODE_BACKEND_URL')
+    try:
+        # Fetch progress data from the backend
+        response = requests.get(f"{url}/api/v1/user/progress/{student_id}/{course_id}")
+        response.raise_for_status()  # Raise an error for bad responses
+        progress_data = response.json()
+
+        # Extract quiz attempts or other performance data
+        quiz_attempts = progress_data.get("progress", {}).get("quizAttempts", [])
+        performance_summary = "\n".join([
+            f"Quiz ID: {attempt['quizId']}, Score: {attempt['score']}, Passed: {attempt['passed']}"
+            for attempt in quiz_attempts
+        ])
+
+        # Define the prompt using PromptTemplate
+        prompt_template = PromptTemplate(
+            input_variables=["performance_summary"],
+            template="""
+            Based on the following student performance data, suggest 3 topics for improvement along with actionable steps to improve.
+
+            Performance Data:
+            {performance_summary}
+            PLEASE DO NOT ADD ```json at the start of json and ``` at the end of json.
+            Provide the response in the following JSON format:
+            {{
+                "topics": [
+                    {{
+                        "topic": "Topic Name",
+                        "suggestions": [
+                            "Actionable suggestion 1",
+                            "Actionable suggestion 2",
+                            "Actionable suggestion 3"
+                        ]
+                    }},
+                    ...
+                ]
+            }}
+            """
+        )
+
+        # Format the prompt
+        prompt = prompt_template.format(performance_summary=performance_summary)
+
+        # Use .invoke() instead of .predict()
+        response_obj = llm.invoke([HumanMessage(content=prompt)])
+        llm_response = response_obj.content
+
+        # Clean the response before parsing
+        llm_response = clean_markdown_content(llm_response)
+
+        # Parse the LLM response (expects valid JSON)
+        try:
+            suggestions_json = json.loads(llm_response.strip())
+            
+            # Add YouTube videos for each topic
+            for topic in suggestions_json.get("topics", []):
+                topic_name = topic["topic"]
+                search_query = f"{topic_name} tutorial explanation"
+                video_result = get_youtube_video(search_query)
+                
+                if video_result["success"]:
+                    topic["video"] = {
+                        "title": video_result["title"],
+                        "url": video_result["url"]
+                    }
+                else:
+                    topic["video"] = {
+                        "title": "No video found",
+                        "url": ""
+                    }
+            
+            # Update progress with suggested videos
+            suggested_videos = []
+            for topic in suggestions_json.get("topics", []):
+                if "video" in topic and topic["video"]["url"]:
+                    suggested_videos.append({
+                        "title": topic["video"]["title"],
+                        "url": topic["video"]["url"],
+                        "reason": f"This video will help you understand {topic['topic']}"
+                    })
+            
+            # Call backend API to update progress with suggested videos
+            if suggested_videos:
+                update_payload = {
+                    "suggestedVideos": suggested_videos
+                }
+                try:
+                    update_response = requests.put(
+                        f"{url}/api/v1/user/progress/{student_id}/{course_id}",
+                        json=update_payload
+                    )
+                    update_response.raise_for_status()
+                except Exception as e:
+                    print(f"Error updating progress with videos: {str(e)}")
+                    
+        except json.JSONDecodeError:
+            print(llm_response)
+            return jsonify({"error": "Failed to parse suggestions from LLM response."}), 500
+
+        return jsonify(suggestions_json), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/syllabus/add', methods=['POST'])
 def add_syllabus():
@@ -125,9 +253,45 @@ import re
 
 def clean_markdown_content(content):
     """Clean content using regex for more precise replacements"""
-    # Replace code blocks with HTML alternatives
-    # content=re.sub(r"```markdown","",content)
+    # Remove markdown code block markers (```json and ```)
+    content = re.sub(r'```json\s*', '', content)
+    content = re.sub(r'```\s*', '', content)
+    # Remove any leading/trailing backticks or quotes that might remain
+    content = re.sub(r'^[`\']+|[`\']+$', '', content.strip())
     return content
+
+def get_youtube_video(query):
+    """Search YouTube for a video related to the query"""
+    api_key = os.getenv("YOUTUBE_API_KEY")
+    base_url = "https://www.googleapis.com/youtube/v3/search"
+    
+    params = {
+        "part": "snippet",
+        "q": query,
+        "key": api_key,
+        "maxResults": 1,
+        "type": "video"
+    }
+    
+    try:
+        response = requests.get(base_url, params=params).json()
+        
+        if "items" not in response or not response["items"]:
+            return {"success": False, "message": "No videos found for the query"}
+        
+        # Get first video
+        item = response["items"][0]
+        title = item["snippet"]["title"]
+        video_id = item["id"]["videoId"]
+        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        return {
+            "success": True,
+            "title": title,
+            "url": video_url
+        }
+    except Exception as e:
+        print(f"Error searching YouTube: {str(e)}")
+        return {"success": False, "message": str(e)}
 
 @app.route('/materials/generate', methods=['POST'])
 def generate_materials():
