@@ -39,7 +39,7 @@ def send_youtube_url_to_api(search_query, module_id, max_results=1):
         # Prepare the data payload with the YouTube URL
         payload = {
             'youtube_video_url': video_url,
-            'title': title  # Include the video title if your API expects it
+            'videoTitle': title  # Include the video title if your API expects it
         }
         
         # Add any required headers
@@ -55,7 +55,7 @@ def send_youtube_url_to_api(search_query, module_id, max_results=1):
         # Check response status
         print(f"API Response Status: {response.status_code}")
         print(f"API Response Text: {response.text[:200]}...")  # Print first 200 chars
-        
+        return response.json()
         # Try to parse JSON response, handle errors gracefully
         try:
             result = response.json()

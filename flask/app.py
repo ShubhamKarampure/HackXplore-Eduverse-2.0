@@ -8,7 +8,7 @@ import re
 import json
 from dotenv import load_dotenv  
 from RAG.LangChainModel import StudyMaterialRAG
-
+from yt_videos.test import send_youtube_url_to_api 
 # Load environment variables from .env
 load_dotenv()
 
@@ -25,6 +25,17 @@ if not groq_api_key:
 
 # Initialize Groq client with API key
 client = Groq(api_key=groq_api_key)
+
+@app.route('/module/youtube_video_add',methods=['POST'])
+def add_yt_video():
+    search_query = request.json.get('search_query')
+    module_id = request.json.get('module_id')
+
+    if( not search_query or not module_id):
+        return jsonify({"error": "search_query and module_id are required"}), 400
+
+    return send_youtube_url_to_api(search_query, module_id)
+        
 
 @app.route('/syllabus/add', methods=['POST'])
 def add_syllabus():
