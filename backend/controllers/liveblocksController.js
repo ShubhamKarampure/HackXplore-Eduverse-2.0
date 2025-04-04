@@ -15,8 +15,8 @@ const liveblocks = new Liveblocks({
 
 export const liveblocksController = {
     authorize: async (req, res) => {
-        const userId = req.userId; // From authMiddleware
-        // The 'room' from the frontend request is now the Document ID
+        const userId = req.userId; // From 
+       
         const { room: documentId } = req.body;
 
         if (!userId) {
@@ -27,7 +27,6 @@ export const liveblocksController = {
         }
 
         try {
-            // --- PERMISSION CHECK using DocumentModel ---
             const document = await DocumentModel.findById(documentId).select('ownerId collaborators'); // Select only needed fields
 
             if (!document) {
@@ -43,8 +42,7 @@ export const liveblocksController = {
                 // If user is neither owner nor collaborator, deny access
                 return res.status(403).json({ message: 'Forbidden: You do not have access to this document (room).' });
             }
-            // --- END PERMISSION CHECK ---
-
+            
             // If permission check passed, proceed to get user info for Liveblocks presence
             const user = await UserModel.findById(userId).select('firstName lastName profile.image.url');
             if (!user) {
@@ -52,9 +50,20 @@ export const liveblocksController = {
                  return res.status(404).json({ message: 'Authenticated user details not found.' });
             }
 
+            const getRandomColor = () => {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            };
+
             const userInfo = {
                 name: `${user.firstName || 'User'} ${user.lastName || ''}`.trim(),
                 picture: user.profile?.image?.url || null,
+                color: getRandomColor(),
+                colorLight: getRandomColor(),
             };
 
             // Prepare and Authorize the Liveblocks session for the documentId (room)

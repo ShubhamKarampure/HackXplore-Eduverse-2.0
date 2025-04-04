@@ -1,12 +1,13 @@
 // controllers/documentController.js
 import { DocumentModel } from '../models/DocumentModel.js';
 import mongoose from 'mongoose';
+import { UserModel } from '../models/userModel.js';
 
 export const documentController = {
     // --- Create a new document ---
     createDocument: async (req, res) => {
         try {
-            const { name } = req.body;
+            const { name, type } = req.body;
             const ownerId = req.userId; // From authMiddleware
 
             if (!ownerId) {
@@ -17,6 +18,7 @@ export const documentController = {
                 name: name || 'Untitled Document', // Use provided name or default
                 ownerId: ownerId,
                 collaborators: [], // Starts with no collaborators
+                type: type || 'text', // Use provided type or default to 'text'
             });
 
             await newDocument.save();
@@ -50,7 +52,9 @@ export const documentController = {
                 ]
             })
             .sort({ updatedAt: -1 }) // Sort by most recently updated
-            .select('name ownerId createdAt updatedAt'); // Select fields to return
+            .populate('ownerId', 'firstName lastName profile.image') // Get owner details
+            .populate('collaborators', 'firstName lastName profile.image') // Get collaborator details
+            .lean(); // Convert to plain JavaScript object for easier manipulation
 
             res.status(200).json(documents);
 
@@ -63,62 +67,44 @@ export const documentController = {
     // --- Add a collaborator to a document ---
     shareDocument: async (req, res) => {
         try {
-            const documentId = req.params.id; // Document ID from URL parameter
-            const ownerId = req.userId;      // Current user (must be the owner to share)
-            const { userIdToAdd } = req.body; // User ID to add as collaborator
+            const ownerId = req.userId; // Authenticated user (must be owner)
+            const { userIdToAdd, documentId } = req.body; // Extract documentId correctly
 
-            if (!ownerId) {
-                return res.status(401).json({ message: 'Authentication required.' });
-            }
-            if (!userIdToAdd) {
-                return res.status(400).json({ message: 'User ID to add is required.' });
-            }
-            if (!mongoose.Types.ObjectId.isValid(documentId)) {
-                 return res.status(400).json({ message: 'Invalid document ID format.' });
-            }
-             if (!mongoose.Types.ObjectId.isValid(userIdToAdd)) {
-                 return res.status(400).json({ message: 'Invalid user ID format for collaborator.' });
-            }
-            if (ownerId === userIdToAdd) {
-                 return res.status(400).json({ message: 'Cannot add owner as a collaborator.' });
-            }
+            if (!ownerId) return res.status(401).json({ message: 'Authentication required.' });
+            if (!userIdToAdd) return res.status(400).json({ message: 'User ID to add is required.' });
 
+            if (!mongoose.Types.ObjectId.isValid(documentId))
+                return res.status(400).json({ message: 'Invalid document ID format.' });
 
-            // Find the document and ensure the current user is the owner
-            const document = await DocumentModel.findById(documentId);
+            if (!mongoose.Types.ObjectId.isValid(userIdToAdd))
+                return res.status(400).json({ message: 'Invalid user ID format for collaborator.' });
 
-            if (!document) {
-                return res.status(404).json({ message: 'Document not found.' });
-            }
+            if (ownerId === userIdToAdd)
+                return res.status(400).json({ message: 'Cannot add owner as a collaborator.' });
 
-            // Authorization check: Only the owner can share
-            if (document.ownerId.toString() !== ownerId) {
-                return res.status(403).json({ message: 'Forbidden: Only the document owner can share.' });
-            }
+            // Verify if the user to be added exists
+            const userExists = await UserModel.findById(userIdToAdd);
+            if (!userExists) return res.status(404).json({ message: 'User not found.' });
 
-             // TODO Optional: Check if userIdToAdd actually exists in the UserModel
+            // Find document and check ownership in one query for efficiency
+            const document = await DocumentModel.findOne({ _id: documentId, ownerId });
 
-            // Add the user to the collaborators array using $addToSet to avoid duplicates
+            if (!document) return res.status(403).json({ message: 'Forbidden: Only the document owner can share.' });
+
+            // Add collaborator if not already present
             const updateResult = await DocumentModel.updateOne(
                 { _id: documentId },
                 { $addToSet: { collaborators: userIdToAdd } }
             );
 
-             if (updateResult.modifiedCount === 0 && updateResult.matchedCount === 1) {
-                  return res.status(200).json({ message: 'User is already a collaborator or could not be added.' });
-             }
-             if (updateResult.modifiedCount > 0) {
-                  // Successfully added
-                   res.status(200).json({ message: 'Collaborator added successfully.' });
-              } else {
-                  // Should not happen if document was found, but handle defensively
-                   return res.status(404).json({ message: 'Document not found or update failed.' });
-              }
+            if (updateResult.modifiedCount > 0)
+                return res.status(200).json({ message: 'Collaborator added successfully.' });
 
+            return res.status(200).json({ message: 'User is already a collaborator or could not be added.' });
 
         } catch (error) {
-            console.error('Error sharing document:'.red, error);
+            console.error('Error sharing document:', error);
             res.status(500).json({ message: 'Server error while sharing document.' });
         }
-    },
+    }
 };

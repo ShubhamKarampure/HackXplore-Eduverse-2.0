@@ -149,8 +149,8 @@ export async function getShareableUsersApi() {
         const response = await fetch(API_ROUTES.USER.SHARE_LIST, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${useUserStore.getState().token}`,
-            }
+        'Authorization': `Bearer ${useUserStore.getState().token}`,
+      },
         });
 
         const data = await response.json();
