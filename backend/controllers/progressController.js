@@ -66,9 +66,11 @@ export const updateProgress = async (req, res) => {
 
 // Update quiz attempts and create progress if it doesn't exist
 export const updateQuizAttempt = async (req, res) => {
+    console.log("here");
+    
     try {
       const { studentId, courseId } = req.params;
-      const { quizId, score, cheated } = req.body;
+      const { quizId, score, cheated,passed } = req.body;
   
       // Check if progress exists
       let progress = await ProgressModel.findOne({ student: studentId, course: courseId });

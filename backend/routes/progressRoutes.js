@@ -17,7 +17,7 @@ router.get("/:studentId/:courseId", getProgress);
 
 // Update a progress record
 router.put("/:studentId/:courseId", updateProgress);
-router.put("updateQuiz/:studentId/:courseId", updateQuizAttempt);
+router.put("/updateQuiz/:studentId/:courseId", updateQuizAttempt);
 
 // Delete a progress record
 router.delete("/:studentId/:courseId", deleteProgress);

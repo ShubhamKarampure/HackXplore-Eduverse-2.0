@@ -438,6 +438,7 @@ const CourseSidebar = ({
                           setSelectedModule(module)
                           setIsDashboardOpen(false)
                           setIsPresentationOpen(false)
+                          setIsRoadmapOpen(false)
                         }}
                         className={`w-full flex items-center rounded-xl p-2 transition-all duration-200
                           ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}

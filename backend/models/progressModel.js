@@ -23,6 +23,11 @@ const ProgressSchema = mongoose.Schema({
         type: Number,
         required: true,
       },
+      passed: {
+        type: Boolean,
+        default: false,
+        
+      },
       cheated: {
         type: Boolean,
         default: false,

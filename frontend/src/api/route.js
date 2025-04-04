@@ -39,6 +39,9 @@ const API_ROUTES = {
     },
     USER: {
         SHARE_LIST: `${BACKEND_URL}/share-list`,
+     },
+     PROGRESS: {
+        UPDATE_QUIZ: `${BACKEND_URL}/progress/updateQuiz`,
      }
 
 };
