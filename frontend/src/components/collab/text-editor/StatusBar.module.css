@@ -1,0 +1,36 @@
+.statusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.75rem;
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+.wordCount {
+  font-size: 0.75rem;
+}
+
+.connectionStatus {
+  display: flex;
+  gap: 1rem;
+}
+
+.statusGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statusIcon {
+  display: flex;
+  align-items: center;
+}
+
+.statusText {
+  font-size: 0.75rem;
+}

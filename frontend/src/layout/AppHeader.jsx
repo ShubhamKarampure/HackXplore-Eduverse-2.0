@@ -90,6 +90,30 @@ const AppHeader = () => {
             </button>
           )}
 
+          {pathname.startsWith("/room/") && (
+            <button
+              onClick={() => router.push("/room")}
+              className="flex items-center px-3 py-2 text-gray-500 transition-all rounded-md hover:text-gray-700 dark:hover:text-gray-300"
+              aria-label="Exit"
+            >
+              <span className="mr-2 text-sm font-medium">Exit</span>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+          )}
+
           <div className="flex items-center gap-2">
             <ThemeToggleButton />
             

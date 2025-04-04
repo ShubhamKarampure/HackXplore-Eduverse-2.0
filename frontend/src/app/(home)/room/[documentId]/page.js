@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react";
 import useUserStore from "@/store/userStore";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-import { CollaborativeEditor } from "@/components/collab/text-editor/CollaborativeEditor";
+import { CollaborativeTextEditor } from "@/components/collab/text-editor/CollaborativeEditor";
 
 function RoomLoadingIndicator() {
   return <div>Loading Collaborative Session...</div>;
@@ -67,7 +67,7 @@ export default function DocumentPage() {
     documentType === "code" ? (
       <></>
     ) : (
-      <CollaborativeEditor/>
+                <CollaborativeTextEditor documentName={documentName} />
     )
   )}
    </ClientSideSuspense>
