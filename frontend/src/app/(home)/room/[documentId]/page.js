@@ -3,9 +3,9 @@ import React from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react";
 import useUserStore from "@/store/userStore";
-import CollaborativeEditor from "@/components/collab/code-editor/CollaborativeEditor";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-import TiptapEditor from "@/components/collab/text-editor/editor";
+import { CollaborativeEditor } from "@/components/collab/text-editor/CollaborativeEditor";
+
 function RoomLoadingIndicator() {
   return <div>Loading Collaborative Session...</div>;
 }
@@ -63,12 +63,14 @@ export default function DocumentPage() {
         }}
       >
         <ClientSideSuspense fallback={<RoomLoadingIndicator />}>
-   {documentType === "code" ? (
-                <CollaborativeEditor />
-            ) : (
-              <TiptapEditor/>
-            )}
-        </ClientSideSuspense>
+  {() => (
+    documentType === "code" ? (
+      <></>
+    ) : (
+      <CollaborativeEditor/>
+    )
+  )}
+   </ClientSideSuspense>
       </RoomProvider>
     </LiveblocksProvider>
   );
