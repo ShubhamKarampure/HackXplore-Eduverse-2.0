@@ -13,11 +13,12 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
     const videoUrl = selectedModule?.contents?.video?.url;
     const videoTitle = selectedModule?.contents?.video?.title;
     const youtubeVideoUrl = selectedModule?.contents?.video?.youtube_video_url;
-   
+    
     if (!videoUrl) return null;
 
     const isYouTubeUrl = youtubeVideoUrl!== null && youtubeVideoUrl !== undefined && youtubeVideoUrl !== "" && youtubeVideoUrl !== "null" && youtubeVideoUrl !== "undefined";
-
+    console.log("Is YouTube URL:", isYouTubeUrl, youtubeVideoUrl);
+    
     return (
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4 flex items-center">
@@ -66,6 +67,60 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
     }
   };
 
+  const handleYtVideoAdd = async () => {
+    try {
+      // Check if we have a module ID
+      if (!selectedModule?._id) {
+        console.error("No module ID available");
+        return;
+      }
+  
+      // Generate a search query based on the module title or other data
+      const searchQuery = selectedModule?.title || "educational video for this topic";
+      console.log("Search Query:", searchQuery, selectedModule._id);
+      // Make the request to the Flask backend
+      const res = await fetch(`${process.env.NEXT_PUBLIC_FLASK_URL}/module/youtube_video_add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          search_query: searchQuery,
+          module_id: selectedModule._id
+        })
+      });
+  
+      if (!res.ok) {
+        throw new Error(`Failed to fetch YouTube video: ${res.status}`);
+      }
+  
+      const data = await res.json();  
+      console.log(data);
+      
+      if (data.success) {
+        // Pass the YouTube video data to parent component
+        onVideoUpload({
+          title: data.title || "AI Generated Video",
+          url: null, // Local video URL is null for YouTube videos
+          youtube_video_url: data.module.contents.video.youtube_video_url // Add YouTube URL
+        });
+        
+        // Update the local state if needed
+        setVideoTitle(data.title || "AI Generated Video");
+        
+        // Show success message (you might need to implement this)
+        // toast({ title: "YouTube video added successfully!" });
+      } else {
+        console.error("Failed to add YouTube video:", data.message);
+        // Show error message (you might need to implement this)
+        // toast({ title: "Failed to add YouTube video", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Error adding YouTube video:", error);
+      // toast({ title: "Error adding YouTube video", variant: "destructive" });
+    }
+  };
+
   return (
     <>
       {!isEditMode ? (
@@ -81,6 +136,7 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
           
           <CardContent>
             <div className="space-y-4">
+              {isEditMode && <Button onClick={handleYtVideoAdd}>AI GENERATE VIDEO</Button>}
               <div>
                 <Label>Video Title</Label>
                 <Input
