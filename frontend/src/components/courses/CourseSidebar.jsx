@@ -20,6 +20,8 @@ const CourseSidebar = ({
   onCourseCreated,
   showAlert,
   alertTypes,
+  isRoadmapOpen,
+  setIsRoadmapOpen,
 }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar()
   const router = useRouter()
@@ -165,6 +167,7 @@ const CourseSidebar = ({
           <button
             onClick={() => {
               setIsDashboardOpen(true)
+              setIsRoadmapOpen(false)
               setIsPresentationOpen(false)
               setSelectedModule(null) // Ensure no module is selected
             }}
@@ -199,6 +202,7 @@ const CourseSidebar = ({
             <button
               onClick={() => {
                 setIsPresentationOpen(true)
+                setIsRoadmapOpen(false)
                 setIsDashboardOpen(false)
                 setSelectedModule(null)
               }}
@@ -228,7 +232,41 @@ const CourseSidebar = ({
             </button>
           </div>
         }
-
+        {user?.role === "Student" &&
+          <div className="px-3 py-2">
+            <button
+              onClick={() => {
+                setIsRoadmapOpen(true)
+                setIsPresentationOpen(false)
+                setIsDashboardOpen(false)
+                setSelectedModule(null)
+              }}
+              className={`w-full flex items-center rounded-xl p-3 transition-all duration-200
+                ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"} 
+                ${selectedModule === null && isRoadmapOpen
+                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-indigo-800/40"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent"
+                }`}
+            >
+              <div
+                className={`flex items-center justify-center w-9 h-9 rounded-lg 
+                ${selectedModule === null && isRoadmapOpen
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                  : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <Sparkle className="w-5 h-5" />
+              </div>
+              {(isExpanded || isMobileOpen || isHovered) && (
+                <span
+                  className={`ml-3 font-medium ${selectedModule === null && isRoadmapOpen ? "text-blue-700 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300"}`}
+                >
+                  Roadmap Generator
+                </span>
+              )}
+            </button>
+          </div>
+        }
         <div className="px-4 py-3">
           <div className="flex justify-between items-center mb-2">
             {isVisible ? (
@@ -334,6 +372,7 @@ const CourseSidebar = ({
                             onClick={() => {
                               setSelectedModule(module)
                               setIsDashboardOpen(false)
+                              setIsRoadmapOpen(false)
                               setIsPresentationOpen(false)
                             }}
                             className={`w-full flex items-center rounded-xl p-2 transition-all duration-200
@@ -399,6 +438,7 @@ const CourseSidebar = ({
                           setSelectedModule(module)
                           setIsDashboardOpen(false)
                           setIsPresentationOpen(false)
+                          setIsRoadmapOpen(false)
                         }}
                         className={`w-full flex items-center rounded-xl p-2 transition-all duration-200
                           ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}

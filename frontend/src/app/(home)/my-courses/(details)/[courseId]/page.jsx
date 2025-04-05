@@ -11,7 +11,7 @@ import CourseSidebar from "@/components/courses/CourseSidebar";
 import { useSidebar } from "@/context/SidebarContext";
 import CourseDashboard from "@/components/courses/CourseDashboard";
 import { PresentationGenerator } from "@/components/content-generation/presentation";
-
+import Roadmap from "@/components/courses/content/Roadmap";
 
 const CourseDetailPage = () => {
   const { courseId } = useParams();
@@ -22,6 +22,7 @@ const CourseDetailPage = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [selectedContent, setSelectedContent] = useState(null);
   const [isDashboardOpen, setIsDashboardOpen] = useState(true);
+  const [isRoadmapOpen, setIsRoadmapOpen] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
 
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -41,7 +42,9 @@ const CourseDetailPage = () => {
       const moduleId = searchParams.get("moduleId");
 
       if (moduleId && data.modules) {
-        const foundModule = data.modules.find((module) => module._id === moduleId);
+        const foundModule = data.modules.find(
+          (module) => module._id === moduleId
+        );
 
         if (foundModule) {
           setSelectedModule(foundModule);
@@ -51,7 +54,10 @@ const CourseDetailPage = () => {
         }
       }
     } catch (err) {
-      showAlert(err?.message || "Failed to fetch course details", alertTypes.ERROR);
+      showAlert(
+        err?.message || "Failed to fetch course details",
+        alertTypes.ERROR
+      );
     }
   };
 
@@ -68,27 +74,34 @@ const CourseDetailPage = () => {
 
   return (
     <div className="min-h-screen xl:flex">
-      <CourseSidebar 
-        course={course} 
-        selectedModule={selectedModule} 
+      <CourseSidebar
+        course={course}
+        selectedModule={selectedModule}
         isDashboardOpen={isDashboardOpen}
         isPresentationOpen={isPresentationOpen}
-        setSelectedModule={setSelectedModule} 
+        isRoadmapOpen={isRoadmapOpen}
+        setSelectedModule={setSelectedModule}
         setIsDashboardOpen={setIsDashboardOpen}
         setIsPresentationOpen={setIsPresentationOpen}
+        setIsRoadmapOpen={setIsRoadmapOpen}
       />
       <Backdrop />
 
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
+      <div
+        className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
+      >
         <AppHeader />
         <div className="min-h-screen">
           {isDashboardOpen && <CourseDashboard course={course} />}
-           {isPresentationOpen && <PresentationGenerator courseId={course._id} />}
-          {(!isDashboardOpen && !isPresentationOpen)&& (
-            <ModuleContent 
-              selectedModule={selectedModule} 
-              selectedContent={selectedContent} 
-              setSelectedContent={setSelectedContent} 
+          {isPresentationOpen && (
+            <PresentationGenerator courseId={course._id} />
+          )}
+          {isRoadmapOpen && <Roadmap course={course} />}
+          {!isDashboardOpen && !isPresentationOpen && !isRoadmapOpen && (
+            <ModuleContent
+              selectedModule={selectedModule}
+              selectedContent={selectedContent}
+              setSelectedContent={setSelectedContent}
               onModuleUpdate={handleModuleUpdate} // Pass the function
             />
           )}

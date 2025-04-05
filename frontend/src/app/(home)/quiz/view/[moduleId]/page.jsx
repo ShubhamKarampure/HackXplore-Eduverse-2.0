@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAlert } from "@/context/AlertContext"
 import { getQuizByModuleId } from "@/api/quizApi"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
+import API_ROUTES from "@/api/route"
+import useUserStore from "@/store/userStore"
 
 const QuizViewPage = () => {
   const router = useRouter()
@@ -15,7 +17,7 @@ const QuizViewPage = () => {
   const searchParams = useSearchParams()
   const courseId = searchParams.get("courseId")
   const moduleId = params?.moduleId
-
+  const { user } = useUserStore(); 
   const [quiz, setQuiz] = useState(null)
   const { showAlert, alertTypes } = useAlert()
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -112,12 +114,57 @@ const QuizViewPage = () => {
     }))
   }
 
-  const handleQuizSubmit = () => {
-    setQuizStatus("completed")
-    showAlert("Quiz completed successfully.", alertTypes.SUCCESS)
-
-    calculateResults()
-  }
+  const handleQuizSubmit = async () => {
+    console.log(user)
+    const studentId = user?.id; // Extract the studentId from the user object
+    console.log(studentId)
+  
+    if (!studentId) {
+      showAlert("User not logged in. Please log in to submit the quiz.", alertTypes.ERROR);
+      return;
+    }
+    setQuizStatus("completed");
+    showAlert("Quiz completed successfully.", alertTypes.SUCCESS);
+  
+    const results = calculateResults();
+    const isPass = results.percentage >= 70;
+    console.log(quiz);
+    
+    // Prepare data for API submission
+    const quizData = {
+      quizId: quiz._id,
+      score: results.percentage,
+      cheated: warningCount >= 3, // Mark as cheated if warnings exceed the limit,
+      passed: results.percentage>=70
+    };
+  
+    try {
+      // Call the backend API to update progress
+      const response = await fetch(
+        `${API_ROUTES.PROGRESS.UPDATE_QUIZ}/${studentId}/${courseId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(quizData),
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error("Failed to submit quiz results.");
+      }
+  
+      const data = await response.json();
+      console.log("Quiz submission response:", data);
+  
+      // Show success message
+      showAlert("Quiz results submitted successfully.", alertTypes.SUCCESS);
+    } catch (error) {
+      console.error("Error submitting quiz results:", error);
+      showAlert("Failed to submit quiz results. Please try again.", alertTypes.ERROR);
+    }
+  };
 
   const toggleShowAnswers = () => {
     setShowAnswers(!showAnswers)
@@ -336,6 +383,7 @@ const QuizViewPage = () => {
   if (quizStatus === "completed") {
     const results = calculateResults()
     const isPass = results.percentage >= 70
+    
 
     return (
       <div className="w-full max-w-4xl mx-auto p-3 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 min-h-screen flex flex-col items-center">

@@ -12,11 +12,11 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
   const renderVideo = () => {
     const videoUrl = selectedModule?.contents?.video?.url;
     const videoTitle = selectedModule?.contents?.video?.title;
+    const youtubeVideoUrl = selectedModule?.contents?.video?.youtube_video_url;
    
     if (!videoUrl) return null;
 
-    const isYouTubeUrl =
-      videoUrl?.includes("youtube.com") || videoUrl?.includes("youtu.be");
+    const isYouTubeUrl = youtubeVideoUrl!== null && youtubeVideoUrl !== undefined && youtubeVideoUrl !== "" && youtubeVideoUrl !== "null" && youtubeVideoUrl !== "undefined";
 
     return (
       <div className="mb-8">
@@ -26,26 +26,26 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
         </h2>
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
           {isYouTubeUrl ? (
-            <iframe
-              width="100%"
-              height="480"
-              src={
-                videoUrl
-                  .replace("watch?v=", "embed/")
-                  .replace("youtu.be/", "youtube.com/embed/")
-                  .split("&")[0]
-              }
-              title={videoTitle}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            <div className="relative w-full" style={{ paddingBottom: "56.25%" /* 16:9 aspect ratio */ }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src={
+                  youtubeVideoUrl
+                    .replace("watch?v=", "embed/")
+                    .replace("youtu.be/", "youtube.com/embed/")
+                    .split("&")[0]
+                }
+                title={videoTitle}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
           ) : (
             <video controls className="w-full" src={videoUrl}>
               Your browser does not support the video tag.
             </video>
           )}
-         
         </div>
       </div>
     );

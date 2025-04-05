@@ -13,6 +13,7 @@ import fileUpload from 'express-fileupload'
 import { assignmentRouter } from './routes/assignmentRoutes.js'
 import { liveblocksRouter } from './routes/liveblocksRoutes.js'; // Adjust path if needed
 import { documentRouter } from './routes/documentRoutes.js'
+import { progressRouter } from './routes/progressRoutes.js'
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use('/api/v1/user/liveblocks', liveblocksRouter);
 app.use('/api/v1/user/assignments', assignmentRouter)
 app.use('/api/v1/user/projects', projectRouter)
 app.use('/api/v1/user/documents', documentRouter);
+app.use('/api/v1/user/progress', progressRouter);
 
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`.bgBlue.bold);
