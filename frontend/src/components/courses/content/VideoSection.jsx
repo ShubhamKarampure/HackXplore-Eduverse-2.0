@@ -4,17 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import Input from "../../form/input/InputField";
 import Button from "../../ui/button/Button";
 import Label from "../../form/Label";
+import { useAlert } from "@/context/AlertContext";
+
 
 const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) => {
   const [videoTitle, setVideoTitle] = useState(videoData?.title || "");
   const [videoFile, setVideoFile] = useState(null);
+  const { showAlert, alertTypes } = useAlert();
+  
 
   const renderVideo = () => {
     const videoUrl = selectedModule?.contents?.video?.url;
+    
     const videoTitle = selectedModule?.contents?.video?.title;
     const youtubeVideoUrl = selectedModule?.contents?.video?.youtube_video_url;
-    
-    if (!videoUrl) return null;
+  
+    if (!videoUrl && !selectedModule?.contents?.video?.youtube_video_url
+    ) return null;
 
     const isYouTubeUrl = youtubeVideoUrl!== null && youtubeVideoUrl !== undefined && youtubeVideoUrl !== "" && youtubeVideoUrl !== "null" && youtubeVideoUrl !== "undefined";
     console.log("Is YouTube URL:", isYouTubeUrl, youtubeVideoUrl);
@@ -107,13 +113,18 @@ const VideoSection = ({ videoData, onVideoUpload, isEditMode, selectedModule }) 
         
         // Update the local state if needed
         setVideoTitle(data.title || "AI Generated Video");
-        
-        // Show success message (you might need to implement this)
-        // toast({ title: "YouTube video added successfully!" });
+        showAlert(
+          `Video found successfully!`, 
+          alertTypes.SUCCESS
+        );       
       } else {
         console.error("Failed to add YouTube video:", data.message);
         // Show error message (you might need to implement this)
         // toast({ title: "Failed to add YouTube video", variant: "destructive" });
+        showAlert(
+          `Failed to find video!`, 
+          alertTypes.ERROR
+        );  
       }
     } catch (error) {
       console.error("Error adding YouTube video:", error);
