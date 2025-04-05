@@ -6,8 +6,6 @@ import {
   FileText,
   Share2,
   FileCode,
-  FileSpreadsheet,
-  FilePieChart,
   ChevronDown,
   ChevronUp,
   Eye,
@@ -70,7 +68,7 @@ export default function CollabWorkspace() {
         setIsCreating(true);
         try {
             // Pass document type along with the name
-            const newDoc = await createDocumentApi(newDocName, docType);
+            await createDocumentApi(newDocName, docType);
             showAlert("Document created successfully", alertTypes.SUCCESS);
             fetchDocuments(); // Refetch documents after creation
         } catch (err) {
@@ -102,12 +100,6 @@ export default function CollabWorkspace() {
         }
     };
     
-    // Get file icon based on type
-    const getFileIcon = (file) => {
-        if (file.type === "text") return <FileText size={20} />;
-        if (file.type === "code") return <FileCode size={20} />;
-        return <FileText size={20} />;
-    };
     
     // Filter files based on search query and selected type
     const filteredFiles = files?.filter((file) => {

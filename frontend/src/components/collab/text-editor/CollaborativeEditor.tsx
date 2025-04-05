@@ -55,7 +55,7 @@ export function CollaborativeTextEditor({ documentName }: CollaborativeEditorPro
 
 type EditorProps = {
   doc: Y.Doc;
-  provider: any;
+  provider: ReturnType<typeof getYjsProviderForRoom>;
   isConnected: boolean;
   documentName: string;
 };

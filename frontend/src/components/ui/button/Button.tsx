@@ -19,7 +19,6 @@ const Button: React.FC<ButtonProps> = ({
   startIcon,
   endIcon,
   onClick,
-  type,
   className = "",
   disabled = false,
 }) => {

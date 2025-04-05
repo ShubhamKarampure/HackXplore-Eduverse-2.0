@@ -12,12 +12,10 @@ import { Cursors } from "./Cursors";
 import { Toolbar } from "./Toolbar";
 import { OutputPanel } from "./OutputPanel";
 import { LanguageSelector } from "./LanguageSelector";
-import { ThemeSelector } from "./ThemeSelector";
 import { CompileButton } from "./CompileButton";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileCode, Settings } from 'lucide-react';
-import { useTheme } from "next-themes";
 
 type CollaborativeCodeEditorProps = {
   documentName: string;
@@ -56,8 +54,6 @@ export function CollaborativeCodeEditor({
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const [codeStats, setCodeStats] = useState({ lines: 0, characters: 0 });
   const [language, setLanguage] = useState(defaultLanguage);
-  const [editorTheme, setEditorTheme] = useState<string>("vs-light");
-  const { theme } = useTheme();
   const [output, setOutput] = useState<{
     content: string;
     type: "success" | "error" | "info";
@@ -79,11 +75,6 @@ export function CollaborativeCodeEditor({
       });
     }
   }, [provider]);
-
-  // Update editor theme when system theme changes
-  useEffect(() => {
-    setEditorTheme(theme === "dark" ? "vs-dark" : "vs-light");
-  }, [theme]);
 
   // Set up Yjs and Monaco binding
   useEffect(() => {
@@ -330,7 +321,6 @@ export function CollaborativeCodeEditor({
             currentLanguage={language} 
             onLanguageChange={handleLanguageChange} 
           />
-          <ThemeSelector />
           <Avatars />
         </div>
       </div>
@@ -344,7 +334,6 @@ export function CollaborativeCodeEditor({
               onMount={handleOnMount}
               height="100%"
               width="100%"
-              theme={editorTheme}
               defaultLanguage={language}
               defaultValue=""
               options={{
