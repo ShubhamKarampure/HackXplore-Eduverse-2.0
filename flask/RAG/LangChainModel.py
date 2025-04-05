@@ -105,8 +105,10 @@ Content Requirements:
 - Include key examples that demonstrate practical applications
 - Provide comprehensive explanations of complex concepts
 
+
 Formatting Guidelines:
 - Begin each slide with '---'
+- Please add ```mermaid block when using mermaid diagrams and end with ```. I will be using it in my code to convert mermaid diagrams.
 - PLEASE DO NOT ADD ```markdown
 - Make sure the slide do no overflow 
 - Use hierarchical headings to organize dense information (## for main titles, ### for subtitles)
@@ -114,7 +116,7 @@ Formatting Guidelines:
 - Format each slide to maximize information while maintaining readability
 - Use **bold** and *italics* to highlight critical terms and concepts
 - ADD reference at the end . Make sure the references are valid and do no use your own brain (which you ofcourse do not have)
-- ADD Atleast 1 MERMAID DIAGRAMS. Also make sure the diagram is small to fit and does not overflow
+- ADD Atleast 1 MERMAID DIAGRAMS. Also make sure the diagram is small to fit and does not overflow. Also start your diagram with ```mermaid and end with ```.
 
 DO NOT:
 - Add Marp metadata (I'll handle that separately)
@@ -485,6 +487,46 @@ Important: Return only valid JSON with exactly {num_modules} modules. Do not inc
         })
         
         return result.content
+
+    def check_assignment_relevance(self, text: str, topic: str, description: str) -> bool:
+        """
+        Check if the submitted assignment is relevant to the specified topic and description.
+        Returns directly True or False based on relevance.
+        
+        Args:
+            text: The submitted assignment text to check
+            topic: The topic title that the assignment should be about
+            description: The description of the topic
+            
+        Returns:
+            Boolean indicating if the text is relevant
+        """
+        # Create a simple prompt to assess relevance with yes/no answer
+        relevance_prompt = PromptTemplate(
+            template="""Evaluate if this student submission is relevant to the topic.
+            
+            Topic: {topic}
+            Topic Description: {description}
+            
+            Student Submission:
+            {text}
+            
+            Is this submission relevant to the topic? Answer with ONLY 'true' or 'false'.
+            """,
+            input_variables=["text", "topic", "description"]
+        )
+        # Invoke the LLM with the prompt
+        chain = relevance_prompt | self.llm
+        result = chain.invoke({
+            "text": text,
+            "topic": topic,
+            "description": description
+        })
+        
+        # Get the answer and convert to boolean
+        response = result.content.strip().lower()
+        print(text,response)
+        return 'true' in response
 
 # # Example usage
 # if __name__ == "__main__":

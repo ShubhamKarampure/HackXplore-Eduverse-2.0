@@ -187,7 +187,7 @@ export const getAssignmentByModuleId = async (req, res) => {
   }
 };
 
-// Submit an assignment// Submit an assignment
+// Submit an assignment
 export const submitAssignment = async (req, res) => {
   try {
     const studentId = req.userId;
@@ -212,9 +212,56 @@ export const submitAssignment = async (req, res) => {
         message: "Only PDF format is accepted"
       });
     }
-    
+
     // Upload the submission file to the cloud
     const { public_id, url } = await uploadOnCloud(submissionFile.tempFilePath);
+    
+    // Get assignment topic and description for relevance check
+    const topic = assignment.topic;
+    const description = assignment.description;
+
+    try {
+      // Check if the assignment is relevant to the topic
+      const relevanceResponse = await axios.post(
+        `${process.env.FLASK_URL}/relevant_assignment_check`,
+        { 
+          pdf_url: url, 
+          topic: topic,
+          description: description,
+        },
+        {
+          headers: {
+            "Content-type": "application/json"
+          },
+          credentials: true
+        }
+      );
+      
+      // If response is not successful, throw an error to be caught
+      if (!relevanceResponse.data.is_relevant) {
+        // Delete uploaded file since it's not relevant
+        await deleteFromCloud(public_id);
+        
+        return res.status(400).json({
+          success: false,
+          message: "Assignment is not relevant to the topic. Please ensure your submission addresses the assignment topic."
+        });
+      }
+    } catch (error) {
+      // If the Flask server returned an error
+      if (error.response && error.response.data && error.response.data.error) {
+        // Delete uploaded file since there was an error
+        await deleteFromCloud(public_id);
+        
+        return res.status(400).json({
+          success: false,
+          message: error.response.data.error
+        });
+      }
+      
+      // For other errors, continue with submission but log the error
+      console.log("Error checking relevance, continuing with submission:", error);
+    }
     
     // Check if student already submitted
     const index = assignment.submissions.findIndex(
@@ -296,14 +343,14 @@ export const getAssignmentsByCourseController = async (req, res) => {
   }
 };
 
-// Grade an assignment// Grade an assignment
+// Grade an assignment
 export const gradeAssignmentController = async (req, res) => {
   try {
     const studentId = req.userId;
     const { assignmentId } = req.params;
     
     const assignment = await AssignmentModel.findById(assignmentId);
-    
+    console.log(assignment);
     if (!assignment) {
       return res.status(404).json({
         success: false,
@@ -336,7 +383,9 @@ export const gradeAssignmentController = async (req, res) => {
       { 
         pdf_url, 
         criteria: criteriaNames,
-        maxScores: criteriaMaxScores
+        maxScores: criteriaMaxScores,
+        topic: assignment.topic,
+        description: assignment.description,
       },
       {
         headers: {

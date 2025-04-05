@@ -329,7 +329,7 @@ def generate_materials():
             for subtopic, content in materials.items():
                 f.write('---\n')
                 f.write(f"### {subtopic}\n\n")
-                clean_content = clean_markdown_content(content)
+                clean_content = content
                 f.write(clean_content)
                 f.write("\n\n")
         os.system(f" mmdc -i {file_path} -o {file_path} ")
@@ -471,17 +471,18 @@ def roadmap2():
 #             "error": "Response is not valid JSON.",
 #             "attempted_response": message_content
 #         }), 500
-@app.route('/grade', methods=['POST'])
-def grade():
+
+@app.route('/relevant_assignment_check', methods=['POST'])
+def relevant_assignment_check():
     data = request.get_json()
     
     # Check if required fields are present
-    if not data or 'pdf_url' not in data or 'criteria' not in data:
-        return jsonify({"error": "Missing 'pdf_url' or 'criteria' in the request."}), 400
+    if not data or 'pdf_url' not in data:
+        return jsonify({"error": "Missing 'pdf_url'."}), 400
     
     pdf_url = data['pdf_url']
-    criteria = data['criteria']
-    max_scores = data.get('maxScores', [10] * len(criteria))  # Default to 10 if not provided
+    topic=data.get('topic', '')
+    description=data.get('description', '')
     
     try:
         # Download the PDF content
@@ -501,7 +502,43 @@ def grade():
         return jsonify({"error": f"Failed to download PDF: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Failed to extract text from PDF: {str(e)}"}), 500
+    relvancy=study_system.check_assignment_relevance(text,topic,description)
+    return jsonify({"is_relevant": relvancy})
+
+
+@app.route('/grade', methods=['POST'])
+def grade():
+    data = request.get_json()
     
+    # Check if required fields are present
+    if not data or 'pdf_url' not in data or 'criteria' not in data:
+        return jsonify({"error": "Missing 'pdf_url' or 'criteria' in the request."}), 400
+    
+    pdf_url = data['pdf_url']
+    criteria = data['criteria']
+    max_scores = data.get('maxScores', [10] * len(criteria))  # Default to 10 if not provided
+    topic=data.get('topic', '')
+    description=data.get('description', '')
+    
+    try:
+        # Download the PDF content
+        response = requests.get(pdf_url)
+        response.raise_for_status()  # Ensure the request was successful
+        
+        # Load the PDF content into memory using BytesIO
+        file = BytesIO(response.content)
+        
+        # Use PyPDF2 to read and extract text from the PDF
+        reader = PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""  # Extract text from each page
+        
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to download PDF: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Failed to extract text from PDF: {str(e)}"}), 500
+
     # Clean criteria names to make them valid JSON keys
     clean_criteria = []
     for criterion in criteria:
