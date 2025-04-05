@@ -329,7 +329,33 @@ def generate_materials():
             for subtopic, content in materials.items():
                 f.write('---\n')
                 f.write(f"### {subtopic}\n\n")
-                clean_content = content
+                
+                # Check if the content contains mermaid diagrams
+                if '```mermaid' in content:
+                    # Process the content to preserve mermaid blocks but remove other code blocks
+                    lines = content.split('\n')
+                    in_mermaid_block = False
+                    clean_lines = []
+                    
+                    for line in lines:
+                        if '```mermaid' in line:
+                            in_mermaid_block = True
+                            clean_lines.append(line)
+                        elif '```' in line and in_mermaid_block:
+                            in_mermaid_block = False
+                            clean_lines.append(line)
+                        elif in_mermaid_block:
+                            clean_lines.append(line)
+                        else:
+                            # Clean non-mermaid lines
+                            clean_line = line.replace("```markdown", "").replace("```", "")
+                            clean_lines.append(clean_line)
+                            
+                    clean_content = '\n'.join(clean_lines)
+                else:
+                    # If no mermaid blocks, remove all code block markers
+                    clean_content = content.replace("```markdown", "").replace("```", "").strip()
+                    
                 f.write(clean_content)
                 f.write("\n\n")
         os.system(f" mmdc -i {file_path} -o {file_path} ")

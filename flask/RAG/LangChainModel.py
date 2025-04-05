@@ -108,7 +108,8 @@ Content Requirements:
 
 Formatting Guidelines:
 - Begin each slide with '---'
-- Please add ```mermaid block when using mermaid diagrams and end with ```. I will be using it in my code to convert mermaid diagrams.
+- Please add ```mermaid block when using mermaid diagrams and end with ```. I will be using it in my code to convert mermaid diagrams. And please do not add ``` anywhere except mermaid. A humble request
+
 - PLEASE DO NOT ADD ```markdown
 - Make sure the slide do no overflow 
 - Use hierarchical headings to organize dense information (## for main titles, ### for subtitles)
@@ -119,12 +120,14 @@ Formatting Guidelines:
 - ADD Atleast 1 MERMAID DIAGRAMS. Also make sure the diagram is small to fit and does not overflow. Also start your diagram with ```mermaid and end with ```.
 
 DO NOT:
+- DO NOT ADD ```markdown
 - Add Marp metadata (I'll handle that separately)
 - Include image references
 - Write annotations like "Here is the slide content"
 - Sacrifice depth for brevity
 - Omit important details or nuances
-- ADD ``` markdown code block
+- DO NOT ADD ``` markdown code block
+- DO NOT ADD ``` code block
             """,
             input_variables=["topic", "description", "reference_content", "teacher_id"]
         )
