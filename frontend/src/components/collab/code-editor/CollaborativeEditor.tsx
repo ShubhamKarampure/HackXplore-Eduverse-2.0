@@ -10,7 +10,6 @@ import { MonacoBinding } from "y-monaco";
 import { Awareness } from "y-protocols/awareness";
 import { Cursors } from "./Cursors";
 import { Toolbar } from "./Toolbar";
-import { StatusBar } from "./StatusBar";
 import { OutputPanel } from "./OutputPanel";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeSelector } from "./ThemeSelector";
@@ -18,7 +17,6 @@ import { CompileButton } from "./CompileButton";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileCode, Settings } from 'lucide-react';
-import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 
 type CollaborativeCodeEditorProps = {
@@ -26,20 +24,28 @@ type CollaborativeCodeEditorProps = {
   defaultLanguage?: string;
 };
 
-// Supported languages for compilation
-const COMPILABLE_LANGUAGES = [
-  "javascript", 
-  "typescript", 
-  "python", 
-  "java", 
-  "c", 
-  "cpp", 
-  "csharp",
-  "go",
-  "rust"
-];
+// Piston API endpoint
+const PISTON_API_URL = "https://emkc.org/api/v2/piston";
 
-// Collaborative code editor with undo/redo, live cursors, compilation, and live avatars
+// Mapping of editor languages to Piston runtimes
+const LANGUAGE_TO_PISTON_RUNTIME: Record<string, string> = {
+  "javascript": "nodejs",
+  "typescript": "typescript",
+  "python": "python3",
+  "java": "java",
+  "c": "c",
+  "cpp": "cpp",
+  "csharp": "csharp",
+  "go": "go",
+  "rust": "rust",
+  "ruby": "ruby",
+  "php": "php",
+};
+
+// Supported languages for compilation via Piston
+const COMPILABLE_LANGUAGES = Object.keys(LANGUAGE_TO_PISTON_RUNTIME);
+
+// Collaborative code editor with undo/redo, live cursors, compilation via Piston, and live avatars
 export function CollaborativeCodeEditor({ 
   documentName, 
   defaultLanguage = "typescript" 
@@ -126,6 +132,39 @@ export function CollaborativeCodeEditor({
     }
   }, []);
 
+  useEffect(() => {
+  if (!editorRef || !provider) return;
+  
+  const awareness = provider.awareness as unknown as Awareness;
+  
+  // Set initial user state with color assigned from Liveblocks
+  awareness.setLocalStateField('user', {
+    name: userInfo?.name || 'Anonymous',
+    color: userInfo?.color || '#000000',
+  });
+  
+  // Track cursor position in Monaco
+  const disposable = editorRef.onDidChangeCursorPosition((e) => {
+    // Convert Monaco cursor position to pixel coordinates
+    const position = editorRef.getScrolledVisiblePosition(e.position);
+    
+    if (position) {
+      // Update the local cursor position in awareness
+      awareness.setLocalStateField('cursor', {
+        top: position.top,
+        left: position.left
+      });
+    }
+  });
+  
+  return () => {
+    disposable.dispose();
+    
+    // Clear cursor position when unmounting
+    awareness.setLocalStateField('cursor', null);
+  };
+}, [editorRef, provider, userInfo]);
+
   // Handle language change
   const handleLanguageChange = useCallback((newLanguage: string) => {
     setLanguage(newLanguage);
@@ -137,93 +176,112 @@ export function CollaborativeCodeEditor({
     }
   }, [editorRef]);
 
+  // Execute code using Piston API
+  const executeWithPiston = async (code: string, lang: string): Promise<{
+    stdout: string;
+    stderr: string;
+    output: string;
+    success: boolean;
+  }> => {
+    const pistonRuntime = LANGUAGE_TO_PISTON_RUNTIME[lang];
+    
+    if (!pistonRuntime) {
+      throw new Error(`Language '${lang}' is not supported for execution`);
+    }
+    
+    try {
+      const response = await fetch(`${PISTON_API_URL}/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          language: pistonRuntime,
+          version: '*', // Use latest version
+          files: [
+            {
+              name: `main.${lang === 'typescript' ? 'ts' : lang}`,
+              content: code,
+            },
+          ],
+          stdin: '',
+          args: [],
+          compile_timeout: 10000,
+          run_timeout: 3000,
+          compile_memory_limit: -1,
+          run_memory_limit: -1,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Format the result
+      const stdout = data.run.stdout || '';
+      const stderr = data.run.stderr || '';
+      const compile_error = data.compile?.stderr || '';
+      
+      const success = !compile_error && !stderr;
+      const output = compile_error || stderr || stdout || 'Execution completed with no output';
+      
+      return {
+        stdout,
+        stderr: compile_error || stderr,
+        output,
+        success: success
+      };
+    } catch (error) {
+      console.error('Piston execution error:', error);
+      throw error;
+    }
+  };
+
   // Handle compilation
   const handleCompile = useCallback(async () => {
     if (!editorRef) return;
     
     setIsCompiling(true);
-    setOutput({ content: "Compiling...", type: "info" });
+    setOutput({ content: "Compiling and executing code...", type: "info" });
     setActiveTab("output");
     
     try {
       const code = editorRef.getValue();
       
-      // In a real app, you would send this to a backend service
-      // This is a mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock compilation result based on language
-      if (COMPILABLE_LANGUAGES.includes(language)) {
-        // Check for some basic errors
-        if (code.includes("console.lg") && (language === "javascript" || language === "typescript")) {
-          setOutput({
-            content: "Error: 'console.lg' is not a function. Did you mean 'console.log'?",
-            type: "error"
-          });
-        } else if (code.trim() === "") {
-          setOutput({
-            content: "Warning: Empty code file",
-            type: "error"
-          });
-        } else {
-          // Mock successful compilation
-          setOutput({
-            content: `Compilation successful!\n\n${mockOutput(code, language)}`,
-            type: "success"
-          });
-        }
-      } else {
+      if (!COMPILABLE_LANGUAGES.includes(language)) {
         setOutput({
           content: `Language '${language}' compilation is not supported.`,
           type: "error"
         });
+        return;
       }
+      
+      if (code.trim() === "") {
+        setOutput({
+          content: "Warning: Empty code file",
+          type: "error"
+        });
+        return;
+      }
+      
+      const result = await executeWithPiston(code, language);
+      
+      setOutput({
+        content: result.output,
+        type: result.success ? "success" : "error"
+      });
+      
     } catch (error) {
       setOutput({
-        content: `Compilation error: ${error instanceof Error ? error.message : String(error)}`,
+        content: `Execution error: ${error instanceof Error ? error.message : String(error)}`,
         type: "error"
       });
     } finally {
       setIsCompiling(false);
     }
   }, [editorRef, language]);
-
-  // Mock output generation based on language and code
-  const mockOutput = (code: string, lang: string): string => {
-    switch (lang) {
-      case "javascript":
-      case "typescript":
-        if (code.includes("console.log")) {
-          return code
-            .split("\n")
-            .filter(line => line.includes("console.log"))
-            .map(line => {
-              const match = line.match(/console\.log\(['"](.+)['"]\)/);
-              return match ? match[1] : "";
-            })
-            .filter(Boolean)
-            .join("\n");
-        }
-        return "Program executed successfully with no output";
-      
-      case "python":
-        if (code.includes("print")) {
-          return code
-            .split("\n")
-            .filter(line => line.includes("print"))
-            .map(line => {
-              const match = line.match(/print\(['"](.+)['"]\)/);
-              return match ? match[1] : "";
-            })
-            .filter(Boolean)
-            .join("\n");
-        }
-        return "Program executed successfully with no output";
-        
-      default:
-        return "Program compiled and executed successfully";
-    }
-  };
 
   // Set up editor height on load and resize
   useEffect(() => {
@@ -250,8 +308,9 @@ export function CollaborativeCodeEditor({
   }, []);
 
   return (
-    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden h-full max-h-screen">
-      {/* Document Header - similar to text editor */}
+     <div className="flex flex-col h-screen border border-gray-20 bg-background text-foreground">
+      
+    {/* Document Header - similar to text editor */ }
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2">
           <FileCode size={20} />
@@ -278,7 +337,7 @@ export function CollaborativeCodeEditor({
       
       {/* Editor Container */}
       <ResizablePanelGroup direction="vertical" className="flex-1">
-        <ResizablePanel defaultSize={70} minSize={30}>
+        <ResizablePanel defaultSize={80} minSize={50}>
           <div className="h-full relative" ref={editorContainerRef}>
             {provider ? <Cursors yProvider={provider} /> : null}
             <Editor
@@ -310,7 +369,7 @@ export function CollaborativeCodeEditor({
           </div>
         </ResizablePanel>
         
-        <ResizablePanel defaultSize={30} minSize={20}>
+        <ResizablePanel defaultSize={50} minSize={50}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <div className="border-b border-gray-200 px-4">
               <TabsList>
@@ -368,6 +427,14 @@ export function CollaborativeCodeEditor({
                     >
                       Toggle
                     </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium">Execution Settings</h4>
+                  <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded text-sm">
+                    <p className="mb-2">Execution is powered by <a href="https://github.com/engineer-man/piston" className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">Piston</a></p>
+                    <p>Supported languages: {COMPILABLE_LANGUAGES.join(', ')}</p>
                   </div>
                 </div>
               </div>

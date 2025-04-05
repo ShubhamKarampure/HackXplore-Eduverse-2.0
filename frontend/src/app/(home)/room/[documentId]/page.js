@@ -5,7 +5,7 @@ import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblock
 import useUserStore from "@/store/userStore";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 import { CollaborativeTextEditor } from "@/components/collab/text-editor/CollaborativeEditor";
-import { CollaborativeCodeEditor } from "@/components/collab/code-editor";
+import { CollaborativeCodeEditor } from "@/components/collab/code-editor/CollaborativeEditor";
 function RoomLoadingIndicator() {
   return <div>Loading Collaborative Session...</div>;
 }
