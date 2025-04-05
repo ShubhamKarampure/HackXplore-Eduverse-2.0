@@ -8,6 +8,7 @@ layer(base);
 
 @import 'tailwindcss';
 
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {
@@ -790,8 +791,6 @@ html {
     display: none;
   }
 }
-
-
 
 /* Cursor selection background */
 .yRemoteSelection {

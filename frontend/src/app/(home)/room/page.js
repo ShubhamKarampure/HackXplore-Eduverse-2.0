@@ -72,11 +72,15 @@ export default function CollabWorkspace() {
             // Pass document type along with the name
             const newDoc = await createDocumentApi(newDocName, docType);
             showAlert("Document created successfully", alertTypes.SUCCESS);
-           
+            fetchDocuments(); // Refetch documents after creation
         } catch (err) {
             console.error("Failed to create document:", err);
             showAlert("Failed to create document", alertTypes.ERROR);
             setIsCreating(false);
+        }
+        finally {
+            setIsCreating(false);
+            setShowCreateModal(!showCreateModal);
         }
     };
 

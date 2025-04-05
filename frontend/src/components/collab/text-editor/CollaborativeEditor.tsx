@@ -19,7 +19,7 @@ import { getYjsProviderForRoom } from "@liveblocks/yjs";
 import { useRoom, useSelf } from "@liveblocks/react/suspense";
 import { Toolbar } from "./EnhancedToolbar";
 import styles from "./CollaborativeEditor.module.css";
-import { Avatars } from "./Avatars";
+import { Avatars } from "../code-editor/Avatars";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { StatusBar } from "./StatusBar";
 import { FileText } from "lucide-react";

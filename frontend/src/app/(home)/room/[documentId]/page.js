@@ -5,7 +5,7 @@ import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblock
 import useUserStore from "@/store/userStore";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 import { CollaborativeTextEditor } from "@/components/collab/text-editor/CollaborativeEditor";
-
+import { CollaborativeCodeEditor } from "@/components/collab/code-editor";
 function RoomLoadingIndicator() {
   return <div>Loading Collaborative Session...</div>;
 }
@@ -65,7 +65,7 @@ export default function DocumentPage() {
         <ClientSideSuspense fallback={<RoomLoadingIndicator />}>
   {() => (
     documentType === "code" ? (
-      <></>
+      <CollaborativeCodeEditor documentName={documentName}/>
     ) : (
                 <CollaborativeTextEditor documentName={documentName} />
     )
