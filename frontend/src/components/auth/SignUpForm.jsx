@@ -87,13 +87,15 @@ export default function SignUpForm() {
             <GoogleOAuthProvider
               clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
             >
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  console.log("Login Failed");
-                }}
-              />
-            </GoogleOAuthProvider>
+               <GoogleLogin
+        onSuccess={handleGoogleSuccess}
+        onError={() => {
+          console.log('Signup Failed');
+        }}
+        scope="https://www.googleapis.com/auth/calendar.events"
+        prompt="consent"
+      />
+    </GoogleOAuthProvider>
 
             <div className="relative py-3 sm:py-5">
               <div className="absolute inset-0 flex items-center">

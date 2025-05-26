@@ -15,6 +15,28 @@ import { Modal } from "@/components/ui/modal";
 import { useAlert } from "@/context/AlertContext";
 import axiosInstance from "@/lib/axiosInstance";
 
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+
+const CalendarConnectButton = () => {
+  const handleCalendarSuccess = (credentialResponse) => {
+    console.log("Calendar Access Token:", credentialResponse.access_token);
+    // Send to backend or use directly
+  };
+
+  return (
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+      <GoogleLogin
+        onSuccess={handleCalendarSuccess}
+        onError={() => console.log("Calendar Auth Failed")}
+        useOneTap={false}
+        scope="https://www.googleapis.com/auth/calendar.events"
+        prompt="consent"
+      />
+    </GoogleOAuthProvider>
+  );
+};
+
+
 const Calendar = () => {
   const { showAlert, alertTypes } = useAlert();
 
