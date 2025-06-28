@@ -225,32 +225,20 @@ const cleanupResources = async (resources) => {
     console.error('Error during resource cleanup:', cleanupError);
   }
 };
-
+// controllers/moduleController.js
 export const updateModule = async (req, res) => {
   const instructor = req.userId;
-  
+
   try {
     const { moduleId } = req.params;
-    const { 
-      title, 
-      description, 
-      order,
-      videoTitle,
-      youtube_video_url
-    } = req.body;
-   // Find existing module and verify ownership
-    const existingModule = await ModuleModel.findById(moduleId)
-      .populate('course');
-    console.log(title);
-    
+    const { title, description, order, videoTitle, youtube_video_url } = req.body;
+
+    const existingModule = await ModuleModel.findById(moduleId).populate('course');
+
     if (!existingModule) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Module not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Module not found' });
     }
 
-    // Prepare update object
     const updateData = {};
     if (title) updateData.title = title;
     if (description) updateData.description = description;
@@ -262,87 +250,52 @@ export const updateModule = async (req, res) => {
 
     // Handle video upload
     let videoUploadResult = null;
-
     if (req.files && req.files.video) {
-      try {
-        // Delete existing video if exists
-        if (existingModule.contents.video && existingModule.contents.video.publicId) {
-          await deleteFromCloud(existingModule.contents.video.publicId);
-        }
-
-        videoUploadResult = await uploadOnCloud(
-          req.files.video.tempFilePath, 
-          'module-videos'
-        );
-
-        updateData['contents.video'] = {
-          title: videoTitle || req.files.video.name,
-          url: videoUploadResult.url,
-          publicId: videoUploadResult.public_id,
-        
-        };
-      } catch (uploadError) {
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Failed to upload video',
-          error: uploadError.message 
-        });
+      if (existingModule.contents.video?.publicId) {
+        await deleteFromCloud(existingModule.contents.video.publicId);
       }
+      videoUploadResult = await uploadOnCloud(req.files.video.tempFilePath, 'module-videos');
+      updateData['contents.video'] = {
+        title: videoTitle || req.files.video.name,
+        url: videoUploadResult.url,
+        publicId: videoUploadResult.public_id,
+      };
     }
 
     // Handle resource upload
     let resourceUploadResult = null;
     if (req.files && req.files.resource) {
-      try {
-        // Delete existing resource if exists
-        if (existingModule.contents.resource && existingModule.contents.resource.url) {
-          await deleteFromCloud(existingModule.contents.resource.publicId);
-        }
-
-        resourceUploadResult = await uploadOnCloud(
-          req.files.resource.tempFilePath, 
-          'module-resources'
-        );
-
-        updateData['contents.resource'] = {
-          title: req.files.resource.name,
-          url: resourceUploadResult.url
-        };
-      } catch (uploadError) {
-        // Rollback video upload if it exists
-        if (videoUploadResult) {
-          await deleteFromCloud(videoUploadResult.public_id);
-        }
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Failed to upload resource',
-          error: uploadError.message 
-        });
+      if (existingModule.contents.resource?.publicId) {
+        await deleteFromCloud(existingModule.contents.resource.publicId);
       }
+      resourceUploadResult = await uploadOnCloud(req.files.resource.tempFilePath, 'module-resources');
+      updateData['contents.resource'] = {
+        title: req.files.resource.name,
+        url: resourceUploadResult.url,
+      };
     }
 
-    // Update module
     const updatedModule = await ModuleModel.findByIdAndUpdate(
-      moduleId, 
-      { $set: updateData }, 
+      moduleId,
+      { $set: updateData },
       { new: true }
-    ).populate('contents.quiz')
-     .populate('contents.assignment');
+    ).populate('contents.quiz').populate('contents.assignment');
 
     res.status(200).json({
       success: true,
       message: 'Module updated successfully',
-      module: updatedModule
+      module: updatedModule,
     });
   } catch (error) {
     console.error('Module update error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Internal server error',
-      error: error.message 
+      error: error.message,
     });
   }
 };
+
 
 export const deleteModule = async (req, res) => {
   const instructor = req.userId;
@@ -408,14 +361,14 @@ export const deleteModule = async (req, res) => {
     });
   }
 };
+
 export const getModuleDetails = async (req, res) => {
   try {
     const { moduleId } = req.params;
     const userId = req.userId;
-
+   
     // Find module and populate details
     const module = await ModuleModel.findById(moduleId)
-      .populate('course')
       .populate('contents.quiz')
       .populate('contents.assignment')
       .lean();
@@ -442,7 +395,8 @@ export const getModuleDetails = async (req, res) => {
 };
 
 export const generateModules = async (req, res) => {
-  const instructor = req.userId;
+  const courseId = req.params.id;
+  
   // Track created resources
   const createdResources = {
     quizzes: [],
@@ -451,7 +405,6 @@ export const generateModules = async (req, res) => {
   };
   
   try {
-    const courseId = req.params.id;
     const course = await CourseModel.findById(courseId);
 
     // Verify course exists
@@ -462,27 +415,21 @@ export const generateModules = async (req, res) => {
       });
     }
     
-    const description = course.description;
-    
-    // Validate course description
-    if (!description || description.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: "Course description is required for module generation",
-      });
-    }
-    
     // Call Flask API to generate modules
     let response;
     try {
-      response = await axios.post(`${process.env.FLASK_URL}/modules`, 
-        { description }, 
+      const payload = {
+        course_id: courseId, 
+      };
+      console.log(payload)
+      response = await axios.post(`${process.env.FLASK_URL}/module/generate`, 
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
           },
           withCredentials: true,
-          timeout: 30000 // 30 second timeout for AI generation
+          timeout: 60000
         }
       );
     } catch (apiError) {
@@ -495,6 +442,7 @@ export const generateModules = async (req, res) => {
     
     // Validate response data
     if (!response.data || !response.data.modules || !Array.isArray(response.data.modules)) {
+      console.log("Invalid response from AI service:", response.data);
       return res.status(500).json({
         success: false,
         message: "Invalid response from module generation service",
@@ -579,7 +527,6 @@ export const generateModules = async (req, res) => {
           
         generatedModules.push(populatedModule);
       } catch (moduleError) {
-        // If any single module fails, clean up all resources and abort
         await cleanupResources(createdResources, course._id);
         throw new Error(`Failed to create module: ${moduleError.message}`);
       }
@@ -606,3 +553,5 @@ export const generateModules = async (req, res) => {
     });
   }
 };
+
+

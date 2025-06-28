@@ -8,8 +8,9 @@ import Input from "@/components/form/input/InputField"
 import Label from "@/components/form/Label"
 import TextArea from "@/components/form/input/TextArea"
 
-const AIQuizGenerationCard = ({ isOpen, onClose, onGenerate, isGenerating }) => {
+const AIQuizGenerationCard = ({ isOpen, onClose, onGenerate, isGenerating, course_id }) => {
   const [description, setDescription] = useState("")
+
   const [totalQuestions, setTotalQuestions] = useState(10)
   const [questionLevels, setQuestionLevels] = useState({
     beginner: 3,
@@ -24,6 +25,7 @@ const AIQuizGenerationCard = ({ isOpen, onClose, onGenerate, isGenerating }) => 
       totalQuestions,
       questionLevels,
       duration,
+      course_id,
     })
   }
 

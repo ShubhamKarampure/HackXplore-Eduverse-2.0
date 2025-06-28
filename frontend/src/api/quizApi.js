@@ -54,18 +54,18 @@ export async function getQuizByModuleId(moduleId) {
 }
 
 // generate quiz 
-export async function genearteQuiz(quizConfig) {
+export async function generateQuiz(quizConfig) {
   try {
     const response = await fetch(API_ROUTES.QUIZ.GENERATE, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify(quizConfig)
+      body: JSON.stringify(quizConfig),
     });
 
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Quiz creation error:', error);
+    console.error("Quiz creation error:", error);
     throw error;
   }
 }

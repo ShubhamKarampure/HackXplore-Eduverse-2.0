@@ -1,10 +1,11 @@
 "use client";
 import { createContext, useState, useContext, useEffect } from "react";
 
+// creates context object to store theme data (theme, toggleTheme)
 const ThemeContext = createContext(undefined);
 
 export const ThemeProvider = ({
-  children,
+  children
 }) => {
   const [theme, setTheme] = useState("light");
   const [isInitialized, setIsInitialized] = useState(false);

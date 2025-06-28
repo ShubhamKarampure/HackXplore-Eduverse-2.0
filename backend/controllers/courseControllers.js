@@ -9,187 +9,162 @@ import FormData from "form-data";
 
 
 export const createCourse = async (req, res) => {
-  const instructor = req.userId;
-  try {
-    const { name, description, enrollKey, semester, syllabus, textbooks } =
-      req.body;
+  const instructorId = req.userId;
+  const { name, description, enrollKey, semester } = req.body;
 
-    // Validate required fields
-    if (!name || !description || !enrollKey || !semester) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required course fields",
-      });
-    }
+  if (!name || !description || !enrollKey || !semester) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Missing required course fields: name, description, enrollKey, semester.",
+    });
+  }
+
+  let newCourse;
+  let imageUploadResult;
+
+  try {
+    newCourse = new CourseModel({
+      name,
+      instructor: instructorId,
+      description,
+      enrollKey,
+      semester,
+    });
+    await newCourse.save();
 
     // Handle course image upload
-    let imageUploadResult = null;
     if (req.files && req.files.image) {
-      try {
-        imageUploadResult = await uploadOnCloud(
-          req.files.image.tempFilePath,
-          "course-images"
-        );
-      } catch (uploadError) {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upload course image",
-          error: uploadError.message,
-        });
-      }
+      imageUploadResult = await uploadOnCloud(
+        req.files.image.tempFilePath,
+        "course-images"
+      );
+      newCourse.image = {
+        url: imageUploadResult.url,
+        publicId: imageUploadResult.public_id,
+      };
     }
 
     // Handle syllabus file upload
-    let syllabusUploadResult = null;
     if (req.files && req.files.syllabus) {
-      const formData = new FormData();
-      
-      formData.append(
+      const syllabusFile = req.files.syllabus;
+
+      const syllabusFormData = new FormData();
+      syllabusFormData.append(
         "file",
-       fs.createReadStream(req.files.syllabus.tempFilePath),
-        req.files.syllabus.name
+        fs.createReadStream(syllabusFile.tempFilePath),
+        syllabusFile.name
       );
-      formData.append("course_id", name);
-      formData.append("teacher_id", instructor);
-      try {
-        syllabusUploadResult = await uploadOnCloud(
-          req.files.syllabus.tempFilePath,
-          "course-syllabi"
-        );
-      } catch (uploadError) {
-        // Rollback image upload if it exists
-        if (imageUploadResult) {
-          await deleteFromCloud(imageUploadResult.public_id);
-        }
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upload syllabus",
-          error: uploadError.message,
-        });
-      }
-      try {
-        const vectorDbSyllabusUpload = await axios.post(
-          `${process.env.FLASK_URL}/syllabus/add`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-      } catch (e) {
-        console.log("Error uploading syllabus to vector db ", e);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upload syllabus",
-          error: e.message,
-        });
-      }
+      syllabusFormData.append("course_id", newCourse._id.toString());
+
+      // 1. Upload to Cloudinary
+      const syllabusUploadResult = await uploadOnCloud(
+        syllabusFile.tempFilePath,
+        "course-syllabi"
+      );
+      newCourse.syllabus = {
+        url: syllabusUploadResult.url,
+        publicId: syllabusUploadResult.public_id,
+      };
+
+      // 2. Send to Flask for Vector DB Ingestion
+      await axios.post(
+        `${process.env.FLASK_URL}/material/syllabus/add`,
+        syllabusFormData,
+        { headers: { ...syllabusFormData.getHeaders() } }
+      );
     }
 
     // Process textbooks file uploads
-    const processedTextbooks = [];
     if (req.files && req.files.textbooks) {
       const textbookFiles = Array.isArray(req.files.textbooks)
         ? req.files.textbooks
         : [req.files.textbooks];
+
+      const processedTextbooks = [];
       for (const textbook of textbookFiles) {
-        const formData = new FormData();
-        formData.append("file", fs.createReadStream(textbook.tempFilePath));
-        formData.append("course_id", name);
-        formData.append("teacher_id", instructor);
-        try {
-          const textbookUploadResult = await uploadOnCloud(
-            textbook.tempFilePath,
-            "course-textbooks"
-          );
+        
+        const textbookFormData = new FormData();
+        textbookFormData.append(
+          "file",
+          fs.createReadStream(textbook.tempFilePath),
+          textbook.name
+        );
+        textbookFormData.append("course_id", newCourse._id.toString());
+    
+        // 1. Upload to Cloudinary
+        const textbookUploadResult = await uploadOnCloud(
+          textbook.tempFilePath,
+          "course-textbooks"
+        );
+        processedTextbooks.push({
+          title: textbook.name,
+          url: textbookUploadResult.url,
+          publicId: textbookUploadResult.public_id,
+        });
 
-          const vectorDbTextbookUpload = await axios.post(
-            `${process.env.FLASK_URL}/reference/add`,
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
-
-          processedTextbooks.push({
-            title: textbook.name,
-            url: textbookUploadResult.url,
-            publicId: textbookUploadResult.public_id,
-          });
-        } catch (uploadError) {
-          // Rollback previous uploads
-          if (imageUploadResult) {
-            await deleteFromCloud(imageUploadResult.public_id);
-          }
-          if (syllabusUploadResult) {
-            await deleteFromCloud(syllabusUploadResult.public_id);
-          }
-          processedTextbooks.forEach(async (tb) => {
-            await deleteFromCloud(tb.publicId);
-          });
-
-          return res.status(500).json({
-            success: false,
-            message: "Failed to upload textbooks",
-            error: uploadError.message,
-          });
-        }
+        // 2. Send to Flask for Vector DB Ingestion
+        await axios.post(
+          `${process.env.FLASK_URL}/material/reference/add`,
+          textbookFormData,
+          { headers: { ...textbookFormData.getHeaders() } }
+        );
       }
+      newCourse.textbooks = processedTextbooks;
     }
 
-    // Create new course
-    const newCourse = new CourseModel({
-      name,
-      instructor,
-      description,
-      enrollKey,
-      semester,
-      image: imageUploadResult
-        ? {
-            url: imageUploadResult.url,
-            publicId: imageUploadResult.public_id,
-          }
-        : undefined,
-      syllabus: syllabusUploadResult
-        ? {
-            url: syllabusUploadResult.url,
-            publicId: syllabusUploadResult.public_id,
-          }
-        : undefined,
-      textbooks: processedTextbooks,
-      students: [],
-      modules: [],
-    });
-
-    // Save the course
+    // --- Step 4: Save the Updated Course with File Info ---
     await newCourse.save();
 
-    const course = await CourseModel.populate(newCourse, {
-      path: "instructor",
-      select: "firstName lastName",
-    });
-
-    const selectedCourse = await CourseModel.findById(course._id).select(
-      "name instructor description semester image"
-    );
+    const populatedCourse = await CourseModel.findById(newCourse._id)
+      .populate("instructor", "firstName lastName")
+      .select("name instructor description semester image");
 
     res.status(201).json({
       success: true,
       message: "Course created successfully",
-      course: selectedCourse,
+      course: populatedCourse,
     });
   } catch (error) {
+    if (newCourse && newCourse._id) {
+      // Delete any files uploaded to Cloudinary
+      try {
+        if (newCourse.image && newCourse.image.publicId) {
+          await deleteFromCloud(newCourse.image.publicId);
+        }
+        if (newCourse.syllabus && newCourse.syllabus.publicId) {
+          await deleteFromCloud(newCourse.syllabus.publicId);
+        }
+        if (newCourse.textbooks && newCourse.textbooks.length > 0) {
+          for (const tb of newCourse.textbooks) {
+            await deleteFromCloud(tb.publicId);
+          }
+        }
+      } catch (cleanupError) {
+        console.error(
+          "Cleanup Error: Failed to delete assets from cloud.",
+          cleanupError
+        );
+      }
+
+      // Delete the course from MongoDB
+      await CourseModel.findByIdAndDelete(newCourse._id);
+    }
+
     console.error("Course creation error:", error);
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An internal server error occurred.";
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: `Failed to create course: ${errorMessage}`,
       error: error.message,
     });
   }
 };
+
+
 
 export const enrollCourse = async (req, res) => {
   try {
@@ -335,6 +310,7 @@ export const getMyCourses = async (req, res) => {
     });
   }
 };
+
 export const getCourseDetails = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -345,15 +321,9 @@ export const getCourseDetails = async (req, res) => {
       .populate("instructor", "firstName lastName email")
       .populate({
         path: "modules",
-        populate: [
-          { path: "contents.quiz", select: "questions passingScore" },
-          {
-            path: "contents.assignment",
-            select: "title description deadline criteria",
-          },
-        ],
+        select: "_id title order", 
       })
-      .lean(); // Use .lean() for better performance
+      .lean(); 
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });

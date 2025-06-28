@@ -11,8 +11,7 @@ import Label from '../../form/Label';
 const ResourceSection = ({ 
   resourceData, 
   onResourceUpload,
-  isEditMode,
-  selectedModule
+  isEditMode
 }) => {
   const [resourceTitle, setResourceTitle] = useState(resourceData?.title || '');
   const [resourceFile, setResourceFile] = useState(null);
@@ -35,13 +34,13 @@ const ResourceSection = ({
   const renderResourceContent = () => {
     if (!isEditMode) {
       // View mode
-      return selectedModule?.contents?.resource ? (
+      return resourceData?.url ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <span className="font-medium">{selectedModule.contents.resource.title}</span>
-            <Button 
+            <span className="font-medium">{resourceData?.title}</span>
+            <Button
               variant="outline"
-              onClick={() => window.open(selectedModule.contents.resource.url, '_blank')}
+              onClick={() => window.open(resourceData?.url, "_blank")}
             >
               Download
             </Button>

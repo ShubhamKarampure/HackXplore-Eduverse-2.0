@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import Button from "@/components/ui/button/Button";
 import { useAlert } from "@/context/AlertContext";
-import { getQuizByModuleId, updateQuiz } from "@/api/quizApi";
+import { generateQuiz, getQuizByModuleId, updateQuiz } from "@/api/quizApi";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import AIQuizGenerationModal from "@/components/quiz/AIQuiz";
 import Input from "@/components/form/input/InputField";
@@ -24,14 +24,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import TextArea from "@/components/form/input/TextArea";
-import { genearteQuiz } from "@/api/quizApi";
 
 const QuizCreationPage = () => {
+  
   const router = useRouter();
+  
   const params = useParams();
+  const { moduleId } = useParams(); 
+  
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId");
-  const moduleId = params?.moduleId;
 
   const [quizDuration, setQuizDuration] = useState(30);
   const [questions, setQuestions] = useState([]);
@@ -113,21 +115,23 @@ const QuizCreationPage = () => {
     }
   };
 
-  const openAIGenerationModal = () => {
-    setShowAIModal(true);
-  };
-
   const handleGenerateAIQuiz = async (config) => {
     setIsGenerating(true);
     try {
       // Call backend AI quiz generation API
-      const generatedQuizData = await genearteQuiz(config);
+      const generatedQuizData = await generateQuiz(config);
 
-      // Update questions and quiz duration from generated quiz
-      setQuestions(generatedQuizData.quiz);
-
-      showAlert("AI Quiz Generated Successfully!", alertTypes.SUCCESS);
-      setShowAIModal(false);
+      if (!generatedQuizData || generatedQuizData.success === false) {
+        showAlert(
+          generatedQuizData?.message || "Failed to generate AI quiz. Please try again.",
+          alertTypes.ERROR
+        );
+      } else {
+        console.log(generatedQuizData)
+        setQuestions(generatedQuizData.quiz);
+        showAlert("AI Quiz Generated Successfully!", alertTypes.SUCCESS);
+        setShowAIModal(false);
+      }
     } catch (error) {
       showAlert(
         "Failed to generate AI quiz. Please try again.",
@@ -139,6 +143,7 @@ const QuizCreationPage = () => {
   };
 
   const handleBackToCourses = () => {
+    console.log("course_id : ",courseId,"moduldeid : ",moduleId);
     router.push(`/my-courses/${courseId}?moduleId=${moduleId}`);
   };
 
@@ -150,6 +155,7 @@ const QuizCreationPage = () => {
           onClose={() => setShowAIModal(false)}
           onGenerate={handleGenerateAIQuiz}
           isGenerating={isGenerating}
+          course_id={courseId}
         />
       ) : (
         <>

@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.15",
@@ -42,6 +42,8 @@
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/postcss": "^4.0.9",
+    "@tanstack/react-query": "^5.81.5",
+    "@tanstack/react-query-devtools": "^5.81.5",
     "@tiptap/extension-collaboration": "^2.0.4",
     "@tiptap/extension-collaboration-cursor": "^2.0.4",
     "@tiptap/extension-highlight": "^2.11.7",

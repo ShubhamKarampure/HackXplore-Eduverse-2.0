@@ -473,7 +473,7 @@ const QuizViewPage = () => {
         {showAnswers && (
           <div className="w-full max-w-lg">
             <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Review Your Answers</h3>
-            {quiz.questions.map((question, index) => (
+            {quiz?.questions?.map((question, index) => (
               <Card key={question._id} className="mb-4 shadow border border-slate-200 dark:border-slate-800">
                 <CardHeader className="p-3 border-b bg-slate-50 dark:bg-slate-900">
                   <CardTitle className="text-base font-semibold text-slate-800 dark:text-slate-100">

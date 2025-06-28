@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAlert } from "@/context/AlertContext";
 import { getCourseDetails } from "@/api/courseApi";
 import ModuleContent from "@/components/courses/ModuleContent";
@@ -12,18 +13,16 @@ import { useSidebar } from "@/context/SidebarContext";
 import CourseDashboard from "@/components/courses/CourseDashboard";
 import { PresentationGenerator } from "@/components/content-generation/presentation";
 import Roadmap from "@/components/courses/content/Roadmap";
+import Loader from "@/components/Loading"; // Assuming a generic Loader component
 
 const CourseDetailPage = () => {
   const { courseId } = useParams();
   const searchParams = useSearchParams();
   const { showAlert, alertTypes } = useAlert();
+  const queryClient = useQueryClient();
 
-  const [course, setCourse] = useState(null);
+  const [activeView, setActiveView] = useState("dashboard"); // 'dashboard', 'module', 'roadmap', 'presentation'
   const [selectedModule, setSelectedModule] = useState(null);
-  const [selectedContent, setSelectedContent] = useState(null);
-  const [isDashboardOpen, setIsDashboardOpen] = useState(true);
-  const [isRoadmapOpen, setIsRoadmapOpen] = useState(false);
-  const [isPresentationOpen, setIsPresentationOpen] = useState(false);
 
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
@@ -33,43 +32,82 @@ const CourseDetailPage = () => {
     ? "lg:ml-[290px]"
     : "lg:ml-[90px]";
 
-  // Fetch course details
-  const fetchCourseDetails = async () => {
-    try {
-      const data = await getCourseDetails(courseId);
-      setCourse(data);
-
-      const moduleId = searchParams.get("moduleId");
-
-      if (moduleId && data.modules) {
-        const foundModule = data.modules.find(
-          (module) => module._id === moduleId
-        );
-
-        if (foundModule) {
-          setSelectedModule(foundModule);
-          setIsDashboardOpen(false);
-        } else {
-          showAlert("Module not found in this course", alertTypes.WARNING);
-        }
-      }
-    } catch (err) {
+  const {
+    data: course,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: () => getCourseDetails(courseId),
+    enabled: !!courseId,
+    onError: (err) => {
       showAlert(
         err?.message || "Failed to fetch course details",
         alertTypes.ERROR
       );
-    }
-  };
+    },
+  });
 
   useEffect(() => {
-    if (courseId) {
-      fetchCourseDetails();
+    const moduleId = searchParams.get("moduleId");
+    if (moduleId) {
+      setSelectedModule(moduleId);
+      setActiveView("module");
+    } else {
+      // Default to dashboard if no module is selected
+      setActiveView("dashboard");
+      setSelectedModule(null);
     }
-  }, [courseId, searchParams]);
+  }, [searchParams]);
 
-  // This function will be passed to ModuleContent to trigger refetch
-  const handleModuleUpdate = () => {
-    fetchCourseDetails(); // Refetch course details when a module is updated
+  const handleTitleUpdate = (moduleId, newTitle) => {
+    // Optimistically update the local cache for instant UI feedback
+    queryClient.setQueryData(["course", courseId], (oldData) => {
+      if (!oldData) return;
+      const updatedModules = oldData.modules.map((module) =>
+        module._id === moduleId ? { ...module, title: newTitle } : module
+      );
+      return { ...oldData, modules: updatedModules };
+    });
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return <Loader />;
+    }
+
+    if (isError) {
+      return (
+        <div className="p-6 text-center text-red-500">
+          Error loading course: {error.message}
+        </div>
+      );
+    }
+
+    if (!course) {
+      return (
+        <div className="p-6 text-center text-gray-500">Course not found.</div>
+      );
+    }
+
+    switch (activeView) {
+      case "dashboard":
+        return <CourseDashboard course={course} />;
+      case "presentation":
+        return <PresentationGenerator courseId={course._id} />;
+      case "roadmap":
+        return <Roadmap course={course} />;
+      case "module":
+        return (
+          <ModuleContent
+            selectedModule={selectedModule}
+            handleTitleUpdate={handleTitleUpdate}
+          />
+        );
+      default:
+        return <CourseDashboard course={course} />;
+    }
   };
 
   return (
@@ -77,13 +115,9 @@ const CourseDetailPage = () => {
       <CourseSidebar
         course={course}
         selectedModule={selectedModule}
-        isDashboardOpen={isDashboardOpen}
-        isPresentationOpen={isPresentationOpen}
-        isRoadmapOpen={isRoadmapOpen}
+        activeView={activeView}
+        setActiveView={setActiveView}
         setSelectedModule={setSelectedModule}
-        setIsDashboardOpen={setIsDashboardOpen}
-        setIsPresentationOpen={setIsPresentationOpen}
-        setIsRoadmapOpen={setIsRoadmapOpen}
       />
       <Backdrop />
 
@@ -91,21 +125,7 @@ const CourseDetailPage = () => {
         className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
       >
         <AppHeader />
-        <div className="min-h-screen">
-          {isDashboardOpen && <CourseDashboard course={course} />}
-          {isPresentationOpen && (
-            <PresentationGenerator courseId={course._id} />
-          )}
-          {isRoadmapOpen && <Roadmap course={course} />}
-          {!isDashboardOpen && !isPresentationOpen && !isRoadmapOpen && (
-            <ModuleContent
-              selectedModule={selectedModule}
-              selectedContent={selectedContent}
-              setSelectedContent={setSelectedContent}
-              onModuleUpdate={handleModuleUpdate} // Pass the function
-            />
-          )}
-        </div>
+        <div className="min-h-screen">{renderContent()}</div>
       </div>
     </div>
   );

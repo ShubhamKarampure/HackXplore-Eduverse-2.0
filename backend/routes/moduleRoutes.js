@@ -1,13 +1,15 @@
 import express from "express";
-import { createModule,  updateModule, deleteModule, generateModules } from "../controllers/moduleController.js";
+import { createModule,  updateModule, deleteModule, getModuleDetails, generateModules } from "../controllers/moduleController.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Teacher Actions
-router.post("/", createModule);
-router.get("/generate/:id", generateModules);
+router.post("/", authMiddleware,createModule);
+router.get("/generate/:id",authMiddleware, generateModules);
 
-router.put("/:moduleId", updateModule);
-router.delete("/:id", deleteModule);
+router.get("/:moduleId", authMiddleware, getModuleDetails);
+router.patch("/:moduleId", authMiddleware, updateModule);
+router.delete("/:id",authMiddleware, deleteModule);
 
 export const ModuleRouter = router;

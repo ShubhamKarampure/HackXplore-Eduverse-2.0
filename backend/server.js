@@ -1,7 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import cookieParser from 'cookie-parser'
 import 'colors'
 import { dbConnect } from './database/dbConnect.js'
 import { userRouter } from './routes/userRoutes.js'
@@ -11,7 +10,7 @@ import { quizRouter } from './routes/quizRoutes.js'
 import projectRouter from './routes/projectRoutes.js'
 import fileUpload from 'express-fileupload'
 import { assignmentRouter } from './routes/assignmentRoutes.js'
-import { liveblocksRouter } from './routes/liveblocksRoutes.js'; // Adjust path if needed
+import { liveblocksRouter } from './routes/liveblocksRoutes.js'; 
 import { documentRouter } from './routes/documentRoutes.js'
 import { progressRouter } from './routes/progressRoutes.js'
 
@@ -20,14 +19,17 @@ dotenv.config();
 dbConnect();
 
 const app = express();
+
 app.use(express.urlencoded({ extended: true }));
+
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
   parseNested: true
 }));
+
 app.use(express.json());
-app.use(cookieParser());
+
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,

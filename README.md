@@ -24,7 +24,6 @@ An intelligent education platform with comprehensive ERP capabilities, powered b
 ### GenAI Services
 - **Flask**: Python web framework for AI services
 - **LangChain**: Framework for developing applications powered by language models
-- **Groq API**: High-performance LLM provider
 - **Gemini API**: Google's multimodal AI model
 - **Qdrant**: Vector database for semantic search
 - **Hugging Face**: For embedding models and transformers
@@ -130,7 +129,6 @@ CLOUDINARY_API_SECRET=your_secret
 #### Flask Service (.env)
 ```
 OPENAI_API_KEY=your_openai_api_key
-GROQ_API_KEY=your_groq_api_key
 
 QDRANT_API_KEY=your_qdrant_api_key
 QDRANT_URL=your_qdrant_url

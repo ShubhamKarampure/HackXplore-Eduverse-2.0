@@ -64,10 +64,11 @@ export const deleteQuiz = async (req, res) => {
 
 export const generateQuiz = async (req, res) => {
   const instructor = req.userId;
+  const course_id = req.body.course_id;
   try {
     const quizConfig = req.body;
     // Call Flask API to generate modules
-    const response = await axios.post(`${process.env.FLASK_URL}/quiz`, { quizConfig }, {
+    const response = await axios.post(`${process.env.FLASK_URL}/quiz/generate`, { quizConfig }, {
       headers: {
         "Content-Type": "application/json",
       },
